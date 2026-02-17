@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.venv/
+.env
+
+# DB
+ptss.db
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# IDEs
+.vscode/
+.idea/
+
+# PTSS Temporary
+tools/check_*.py
+output.log
+.gemini/
+.agent/
+*.log

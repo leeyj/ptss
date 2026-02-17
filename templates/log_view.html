@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Log Viewer - {{ path }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            background: #0f172a;
+            color: #10b981;
+            font-family: 'JetBrains Mono', monospace;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        header {
+            background: #1e293b;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .log-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+        .badge {
+            background: #ef4444;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .path-text { color: #38bdf8; font-weight: 600; font-size: 0.95rem; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="path-text">📁 {{ path }} ({{ host.name }})</div>
+        <div id="status">
+            {% if log_view_mode == 'tail' %}
+            <span class="badge">LIVE TAIL</span>
+            {% endif %}
+        </div>
+    </header>
+    <div class="log-container" id="logContent">로딩 중...</div>
+
+    <script>
+        const hostId = '{{ host.id }}';
+        const path = '{{ path }}';
+        const logViewMode = '{{ log_view_mode }}';
+        let tailInterval = null;
+        let lastContent = "";
+
+        async function fetchLog() {
+            try {
+                const resp = await fetch(`/api/sftp/view_log/${hostId}?path=${path}`);
+                const data = await resp.json();
+                const contentEl = document.getElementById('logContent');
+                
+                if (data.content) {
+                    if (data.content !== lastContent) {
+                        contentEl.innerText = data.content;
+                        contentEl.scrollTop = contentEl.scrollHeight;
+                        lastContent = data.content;
+                    }
+                } else {
+                    contentEl.innerText = '로그 로드 실패: ' + (data.error || '알 수 없는 오류');
+                }
+            } catch (e) {
+                document.getElementById('logContent').innerText = '데이터를 가져오는 중 오류가 발생했습니다.';
+            }
+        }
+
+        // 초기 실행
+        fetchLog();
+
+        // Tail 모드 시 주기적 갱신
+        if (logViewMode === 'tail') {
+            tailInterval = setInterval(fetchLog, 3000);
+        }
+
+        // 창 닫힐 때 정리
+        window.onbeforeunload = () => {
+            if (tailInterval) clearInterval(tailInterval);
+        };
+    </script>
+</body>
+</html>

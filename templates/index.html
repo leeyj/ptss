@@ -1,0 +1,121 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+    <h1>호스트 관리</h1>
+    <button class="btn btn-primary" onclick="document.getElementById('addHostModal').style.display='flex'">+ 새 호스트 추가</button>
+</div>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h2 style="margin: 0;">🖥️ 서버 인프라 상태</h2>
+        <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+            <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block; animation: pulse 2s infinite;"></span>
+            실시간 업데이트 중 (5s)
+        </div>
+    </div>
+    
+    <div id="dashboard-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+        {% for host in hosts %}
+        <div class="host-card" id="host-card-{{ host.id }}" style="background: rgba(30, 41, 59, 0.5); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; transition: all 0.3s ease;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.1rem; color: white;">{{ host.name }}</h3>
+                    <p style="margin: 5px 0 0; font-size: 0.8rem; color: var(--text-muted);">{{ host.username }}@{{ host.hostname }}</p>
+                </div>
+                <div id="status-{{ host.id }}" class="status-badge offline" style="padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Offline</div>
+            </div>
+            
+            <!-- 모니터링 지표 -->
+            <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <!-- CPU -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 5px;">
+                        <span style="color: var(--text-muted);">CPU Usage</span>
+                        <span id="cpu-val-{{ host.id }}" style="font-weight: 600;">--%</span>
+                    </div>
+                    <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
+                        <div id="cpu-bar-{{ host.id }}" style="width: 0%; height: 100%; background: #38bdf8; transition: width 1s ease;"></div>
+                    </div>
+                </div>
+                <!-- RAM -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 5px;">
+                        <span style="color: var(--text-muted);">RAM Usage</span>
+                        <span id="ram-val-{{ host.id }}" style="font-weight: 600;">--%</span>
+                    </div>
+                    <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
+                        <div id="ram-bar-{{ host.id }}" style="width: 0%; height: 100%; background: #a855f7; transition: width 1s ease;"></div>
+                    </div>
+                </div>
+                <!-- Disk -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 5px;">
+                        <span style="color: var(--text-muted);">Disk usage</span>
+                        <span id="disk-val-{{ host.id }}" style="font-weight: 600;">--%</span>
+                    </div>
+                    <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
+                        <div id="disk-bar-{{ host.id }}" style="width: 0%; height: 100%; background: #fbbf24; transition: width 1s ease;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 8px;">
+                <a href="/connect/{{ host.id }}" class="btn btn-primary" style="flex: 1; font-size: 0.85rem; padding: 8px;">접속하기</a>
+                <button class="btn btn-outline" style="padding: 8px 12px;" onclick="location.href='/host/delete/{{ host.id }}'">🗑️</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if not hosts %}
+    <p style="color: var(--text-muted); text-align: center; padding: 60px;">등록된 서버가 없습니다. 우측 상단의 버튼을 눌러 추가하세요.</p>
+    {% endif %}
+</div>
+
+<script>
+    const socket = io();
+
+    // 초기 활성 세션 상태 설정
+    const activeHosts = {{ active_hosts | tojson }};
+    activeHosts.forEach(id => {
+        updateStatus(id, 'online');
+    });
+
+    socket.on('server_stats', function(data) {
+        const id = data.host_id;
+        const stats = data.stats;
+        
+        updateStatus(id, 'online');
+        
+        // CPU 업데이트
+        const cpuVal = document.getElementById(`cpu-val-${id}`);
+        const cpuBar = document.getElementById(`cpu-bar-${id}`);
+        if (cpuVal && cpuBar) {
+            cpuVal.innerText = stats.cpu + '%';
+            cpuBar.style.width = stats.cpu + '%';
+            // 임계치에 따른 색상 변경
+            cpuBar.style.background = stats.cpu > 80 ? '#ef4444' : (stats.cpu > 50 ? '#f59e0b' : '#38bdf8');
+        }
+        
+        // RAM 업데이트
+        const ramVal = document.getElementById(`ram-val-${id}`);
+        const ramBar = document.getElementById(`ram-bar-${id}`);
+        if (ramVal && ramBar) {
+            ramVal.innerText = stats.ram + '%';
+            ramBar.style.width = stats.ram + '%';
+            ramBar.style.background = stats.ram > 90 ? '#ef4444' : '#a855f7';
+        }
+        
+        // Disk 업데이트
+        const diskVal = document.getElementById(`disk-val-${id}`);
+        const diskBar = document.getElementById(`disk-bar-${id}`);
+        if (diskVal && diskBar) {
+            diskVal.innerText = stats.disk + '%';
+            diskBar.style.width = stats.disk + '%';
+        }
+    });
+
+    // updateStatus, toggleAuthFields는 static/js/main.js로 이동됨
+</script>
+{% endblock %}

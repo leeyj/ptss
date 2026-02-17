@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: center; align-items: center; height: 80vh;">
+    <div style="background: var(--sidebar-bg); padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 400px; border: 1px solid var(--border-color);">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 3rem; margin-bottom: 10px;">🔐</div>
+            <h1 style="font-size: 1.8rem; margin: 0; background: linear-gradient(45deg, var(--accent-color), #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">PTSS Login</h1>
+            <p style="color: var(--text-muted); margin-top: 10px;">프리미엄 시스템 관리를 위한 인증</p>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; text-align: center;">
+              {% for message in messages %}
+                {{ message }}
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-muted);">Username</label>
+                <input type="text" name="username" required placeholder="admin" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: var(--text-color); padding: 12px; border-radius: 8px; box-sizing: border-box; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='var(--accent-color)'" onblur="this.style.borderColor='var(--border-color)'">
+            </div>
+            <div style="margin-bottom: 30px;">
+                <label style="display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-muted);">Password</label>
+                <input type="password" name="password" required placeholder="••••••••" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: var(--text-color); padding: 12px; border-radius: 8px; box-sizing: border-box; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='var(--accent-color)'" onblur="this.style.borderColor='var(--border-color)'">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-weight: 600; font-size: 1rem; border-radius: 8px; background: linear-gradient(45deg, var(--accent-color), #6366f1); border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+                로그인
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

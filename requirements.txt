@@ -1,0 +1,7 @@
+flask
+flask-sqlalchemy
+paramiko
+python-dotenv
+cryptography
+flask-socketio
+eventlet

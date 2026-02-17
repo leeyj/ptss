@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto; width: 100%;">
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 16px; padding: 40px; backdrop-filter: blur(10px);">
+        <h2 style="margin-top: 0; margin-bottom: 30px; display: flex; align-items: center; gap: 15px;">
+            <span style="font-size: 1.5rem;">👤</span> 내 프로필 정보
+        </h2>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; color: #10b981; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem;">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div style="margin-bottom: 30px;">
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">사용자 이름</label>
+            <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 8px; color: white;">
+                {{ user.username }}
+            </div>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">계정 역할</label>
+            <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 8px; color: var(--accent-color); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px;">
+                {{ user.role }}
+            </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 40px 0;">
+
+        <h3 style="margin-top: 0; margin-bottom: 20px; font-size: 1.1rem; color: #f8fafc;">비밀번호 변경</h3>
+        <form method="POST">
+            <div style="margin-bottom: 20px;">
+                <label for="password" style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">새 비밀번호</label>
+                <input type="password" name="password" id="password" required 
+                       placeholder="변경할 비밀번호를 입력하세요" 
+                       style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 8px; color: white; box-sizing: border-box; outline: none; transition: border-color 0.2s;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">비밀번호 변경 적용</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('focus', () => input.style.borderColor = 'var(--accent-color)');
+        input.addEventListener('blur', () => input.style.borderColor = 'var(--border-color)');
+    });
+</script>
+{% endblock %}

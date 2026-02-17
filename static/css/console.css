@@ -1,0 +1,456 @@
+.console-container-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.console-container {
+    display: flex;
+    height: 500px;
+    /* 기본 높이 */
+    gap: 20px;
+    min-height: 200px;
+}
+
+.terminal-instance {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    /* Flexbox overflow 이슈 방지 */
+    background: #000;
+    border-radius: 12px;
+    padding: 5px;
+    /* 패딩을 조금 줄임 */
+    overflow: hidden;
+    border: 2px solid transparent;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    box-sizing: border-box;
+    /* 패딩 포함 크기 계산 */
+}
+
+.terminal-instance.focused {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+}
+
+.resize-handle {
+    height: 8px;
+    background: var(--border-color);
+    cursor: ns-resize;
+    width: 100%;
+    border-radius: 4px;
+    transition: background 0.3s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.resize-handle:hover {
+    background: var(--accent-color);
+}
+
+.resize-handle::after {
+    content: '...';
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin-top: -8px;
+}
+
+.sftp-panel {
+    flex: 1;
+    background: var(--sidebar-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sftp-header {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.05);
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.file-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.file-item {
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.2s;
+}
+
+.file-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.file-icon {
+    color: var(--accent-color);
+}
+
+.tab-container {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.tab {
+    padding: 8px 16px;
+    background: var(--sidebar-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-outline:hover {
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.btn-outline.active {
+    background: var(--accent-color);
+    color: var(--bg-color);
+    border-color: var(--accent-color);
+}
+
+.tab.active {
+    background: var(--accent-color);
+    color: var(--bg-color);
+    border-color: var(--accent-color);
+}
+
+/* Session Tabs (Multi-Terminal) */
+.session-tab {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 12px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.session-tab.active {
+    background: var(--sidebar-bg);
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+    font-weight: 600;
+}
+
+.tab-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 20px;
+}
+
+.popup-btn,
+.log-btn,
+.close-btn {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+    opacity: 0.6;
+    color: var(--text-muted);
+}
+
+.popup-btn:hover {
+    background: rgba(56, 189, 248, 0.2);
+    color: var(--accent-color);
+    opacity: 1;
+}
+
+.log-btn:hover {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--success);
+    opacity: 1;
+}
+
+.close-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--danger);
+    opacity: 1;
+}
+
+/* Popup Mode Styles */
+body.popup-mode .sidebar {
+    display: none !important;
+}
+
+body.popup-mode .main-content {
+    padding: 0 !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    height: 100vh !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden !important;
+    /* 스크롤 방지 */
+}
+
+body.popup-mode .console-container-wrapper {
+    flex: 1;
+    /* 상단 탭 바를 제외한 나머지 공간을 꽉 채움 */
+    min-height: 0;
+    /* flex 자식의 overflow 방지 */
+    padding: 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+body.popup-mode .console-container {
+    height: 100% !important;
+    flex: 1;
+    min-height: 0;
+    /* flex 자식의 overflow 방지 */
+}
+
+/* 팝업 모드에서 불필요한 UI 숨김 (터미널 집중) */
+body.popup-mode h1,
+body.popup-mode .console-header-info,
+body.popup-mode #resizeHandle,
+body.popup-mode .tab-container {
+    display: none !important;
+}
+
+body.popup-mode .session-tab-bar {
+    margin-bottom: 5px !important;
+}
+
+/* Settings Modal & Themes */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.settings-modal {
+    width: 500px;
+    background: #1e293b;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0f172a;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--accent-color);
+}
+
+.modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.setting-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+}
+
+.theme-item {
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.theme-item:hover {
+    transform: translateY(-3px);
+}
+
+.theme-preview {
+    height: 50px;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    margin-bottom: 5px;
+}
+
+.theme-item.active .theme-preview {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.theme-item span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.setting-row {
+    display: flex;
+    gap: 20px;
+}
+
+.setting-item {
+    flex: 1;
+}
+
+.setting-item input,
+.setting-item select {
+    width: 100%;
+    padding: 10px;
+    background: #0f172a;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: white;
+    outline: none;
+    font-family: inherit;
+}
+
+.setting-item input:focus,
+.setting-item select:focus {
+    border-color: var(--accent-color);
+}
+
+.modal-footer {
+    padding: 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Snippet Panel & Items */
+.snippet-panel {
+    background: var(--sidebar-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.snippet-header {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.05);
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.snippet-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.snippet-category {
+    font-size: 0.7rem;
+    color: var(--accent-color);
+    font-weight: bold;
+    margin: 15px 0 8px 5px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+    padding-bottom: 4px;
+}
+
+.snippet-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.snippet-item:hover {
+    background: rgba(56, 189, 248, 0.1);
+    border-color: var(--accent-color);
+    transform: translateX(4px);
+}
+
+.snippet-name {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+}
+
+.snippet-actions {
+    position: absolute;
+    right: 0;
+    top: 0;
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    background: rgba(30, 41, 59, 0.9);
+    padding: 2px 5px;
+    border-radius: 4px;
+}
+
+.snippet-item:hover .snippet-actions {
+    opacity: 1;
+}
+
+.snippet-content {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.7;
+}

@@ -1,0 +1,388 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card glass" style="border: none; background: transparent; box-shadow: none;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; padding: 0 10px;">
+        <div>
+            <h1 style="margin: 0; color: var(--accent-color); font-size: 2rem; display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 1.5rem; background: rgba(56, 189, 248, 0.1); padding: 10px; border-radius: 12px;">📋</span> 
+                활동 히스토리
+            </h1>
+            <p style="margin: 8px 0 0 0; color: var(--text-muted); font-size: 0.95rem;">서버 제어 및 관리 활동의 실시간 로그입니다.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="per-page-container">
+                <span class="view-label">View:</span>
+                <select id="perPageSelect" onchange="changePerPage(this.value)" class="premium-select">
+                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20 entries</option>
+                    <option value="30" {% if per_page == 30 %}selected{% endif %}>30 entries</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50 entries</option>
+                </select>
+            </div>
+            <span style="display: inline-flex; align-items: center; padding: 0 18px; height: 40px; background: rgba(56, 189, 248, 0.1); border-radius: 12px; font-size: 0.85rem; color: var(--accent-color); border: 1px solid rgba(56, 189, 248, 0.2); font-weight: 600;">
+                Total: <strong>{{ pagination.total }}</strong> entries
+            </span>
+        </div>
+    </div>
+
+    <div style="overflow-x: auto; padding: 5px;">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>활동 일시</th>
+                    <th>대상 서버</th>
+                    <th>실행 계정</th>
+                    <th>활동 유형</th>
+                    <th>상세 내용</th>
+                    <th style="text-align: right;">추가 정보</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in histories %}
+                <tr class="history-row">
+                    <td class="history-td">
+                        <div class="timestamp">
+                            <span style="color: var(--text-color); border-bottom: 1px dashed rgba(255,255,255,0.1);">{{ log.timestamp.strftime('%Y-%m-%d') }}</span><br>
+                            <span style="font-size: 0.8rem; opacity: 0.7;">{{ log.timestamp.strftime('%H:%M:%S') }}</span>
+                        </div>
+                    </td>
+                    <td class="history-td">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <span class="server-badge">{{ log.host.name }}</span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); font-family: 'JetBrains Mono';">{{ log.host.hostname }}</span>
+                        </div>
+                    </td>
+                    <td class="history-td">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 24px; height: 24px; background: var(--border-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--accent-color);">
+                                {{ log.host.username[0] | upper }}
+                            </div>
+                            <span style="font-size: 0.9rem;">{{ log.host.username }}</span>
+                        </div>
+                    </td>
+                    <td class="history-td">
+                        {% if log.action_type == 'COMMAND' %}
+                        <span class="action-badge badge-command">⌨️ 명령어</span>
+                        {% elif log.action_type == 'UPLOAD' %}
+                        <span class="action-badge badge-upload">📤 업로드</span>
+                        {% elif log.action_type == 'DOWNLOAD' %}
+                        <span class="action-badge badge-download">📥 다운로드</span>
+                        {% else %}
+                        <span class="action-badge" style="background: rgba(255,255,255,0.05);">❓ 기타</span>
+                        {% endif %}
+                    </td>
+                    <td class="history-td">
+                        <div class="detail-container">
+                            <code class="detail-code">{{ log.detail }}</code>
+                        </div>
+                    </td>
+                    <td class="history-td" style="text-align: right;">
+                        <span style="font-size: 0.85rem; color: var(--text-muted);">
+                            {{ log.extra_info if log.extra_info else '-' }}
+                        </span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="padding: 100px; text-align: center; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed var(--border-color);">
+                        <div style="font-size: 3rem; margin-bottom: 16px; opacity: 0.3;">📭</div>
+                        <div style="color: var(--text-muted); font-size: 1.1rem;">기록된 활동 히스토리가 없습니다.</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination and pagination.pages > 1 %}
+    <div class="pagination-container">
+        <div class="pagination-info">
+            Showing Page <strong>{{ pagination.page }}</strong> of {{ pagination.pages }}
+        </div>
+        <div class="pagination-controls">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('view_history', page=pagination.prev_num, per_page=per_page) }}" class="page-btn">
+                <span style="transform: rotate(180deg); display: inline-block;">➔</span> Previous
+            </a>
+            {% else %}
+            <span class="page-btn disabled">
+                <span style="transform: rotate(180deg); display: inline-block;">➔</span> Previous
+            </span>
+            {% endif %}
+
+            <div class="page-numbers">
+                {% for p in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+                    {% if p %}
+                        {% if p == pagination.page %}
+                        <span class="page-num active">{{ p }}</span>
+                        {% else %}
+                        <a href="{{ url_for('view_history', page=p, per_page=per_page) }}" class="page-num">{{ p }}</a>
+                        {% endif %}
+                    {% else %}
+                    <span class="page-num dots">...</span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if pagination.has_next %}
+            <a href="{{ url_for('view_history', page=pagination.next_num, per_page=per_page) }}" class="page-btn">
+                Next <span>➔</span>
+            </a>
+            {% else %}
+            <span class="page-btn disabled">
+                Next <span>➔</span>
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    /* ... existing styles ... */
+    
+    .pagination-container {
+        margin-top: 32px;
+        padding: 20px;
+        background: rgba(30, 41, 59, 0.4);
+        border-radius: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Per Page Selector Styles */
+    .per-page-container {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(56, 189, 248, 0.05);
+        padding: 0 14px;
+        height: 40px; /* 고정 높이로 통일 */
+        border-radius: 12px;
+        border: 1px solid rgba(56, 189, 248, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .per-page-container:hover {
+        background: rgba(56, 189, 248, 0.1);
+        border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    .view-label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        font-weight: 500;
+        line-height: 40px; /* 컨테이너와 동일한 라인 높이 */
+    }
+
+    .premium-select {
+        background: transparent;
+        color: var(--accent-color);
+        border: none;
+        font-size: 0.9rem;
+        font-weight: 700;
+        cursor: pointer;
+        outline: none;
+        height: 40px; /* 컨테이너와 동일한 높이 */
+        line-height: 40px;
+        padding: 0;
+        margin: 0;
+    }
+
+    /* 드롭다운 목록 커스텀 배경색 (옅은 하늘색) */
+    .premium-select option {
+        background-color: #e0f2fe; /* 옅은 하늘색 배경 */
+        color: #0369a1; /* 가독성을 위한 진한 파랑 글씨 */
+        padding: 10px;
+        font-weight: 600;
+    }
+    
+    .pagination-info {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+    
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    
+    .page-numbers {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .page-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: rgba(56, 189, 248, 0.1);
+        color: var(--accent-color);
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.2s;
+        border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+    
+    .page-btn:hover:not(.disabled) {
+        background: var(--accent-color);
+        color: var(--bg-color);
+        transform: translateY(-1px);
+    }
+    
+    .page-btn.disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+        filter: grayscale(1);
+    }
+    
+    .page-num {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .page-num:hover:not(.active):not(.dots) {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-color);
+    }
+    
+    .page-num.active {
+        background: var(--accent-color);
+        color: var(--bg-color);
+        font-weight: 700;
+        border-color: var(--accent-color);
+    }
+    
+    /* ... rest of the existing styles ... */
+    .history-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 10px;
+        text-align: left;
+    }
+    
+    .history-table th {
+        padding: 0 20px 10px 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+        border: none;
+    }
+    
+    .history-row {
+        background: rgba(30, 41, 59, 0.4);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: default;
+    }
+    
+    .history-row:hover {
+        background: rgba(30, 41, 59, 0.8);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .history-td {
+        padding: 18px 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .history-td:first-child {
+        border-left: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px 0 0 12px;
+    }
+    
+    .history-td:last-child {
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 0 12px 12px 0;
+    }
+    
+    .timestamp {
+        font-family: 'JetBrains Mono', monospace;
+        line-height: 1.4;
+    }
+    
+    .server-badge {
+        background: rgba(56, 189, 248, 0.1);
+        color: var(--accent-color);
+        padding: 3px 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid rgba(56, 189, 248, 0.2);
+        display: inline-block;
+    }
+    
+    .action-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    
+    .badge-command { background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+    .badge-upload { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-download { background: rgba(99, 102, 241, 0.1); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); }
+    
+    .detail-container {
+        max-width: 400px;
+        overflow: hidden;
+    }
+    
+    .detail-code {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+        color: #e2e8f0;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        display: inline-block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        transition: all 0.2s;
+    }
+    
+    .history-row:hover .detail-code {
+        background: rgba(0, 0, 0, 0.5);
+        color: var(--accent-color);
+        border-color: rgba(56, 189, 248, 0.3);
+    }
+    
+    /* Responsive adjustment */
+    @media (max-width: 1024px) {
+        .detail-container { max-width: 200px; }
+    }
+</style>
+
+<script>
+    function changePerPage(val) {
+        window.location.href = "{{ url_for('view_history', page=1) }}" + "&per_page=" + val;
+    }
+</script>
+{% endblock %}
