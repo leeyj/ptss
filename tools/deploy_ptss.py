@@ -7,7 +7,9 @@ from pathlib import Path
 HOST = "192.168.0.20"
 PORT = 22
 USERNAME = "az001a"
-PASSWORD = "[REDACTED]"  # 실제 사용시에는 환경변수로 빼는 것이 좋습니다.
+PASSWORD = os.getenv(
+    "PTSS_REMOTE_PASSWORD"
+)  # 안전을 위해 .env 또는 환경변수에서 로드하세요.
 REMOTE_PATH = "/home/az001a/Script/ptss"
 LOCAL_PATH = Path("c:/Python312/ptss")  # 로컬 프로젝트 경로
 

@@ -49,7 +49,7 @@ PTSS_MASTER_KEY=당신의_보안_키_입력
 ```bash
 python ptss.py
 ```
-접속 주소: `http://localhost:6001` (기본 계정: admin / [REDACTED])
+접속 주소: `http://localhost:6001` (기본 계정: admin / .env에 설정한 비밀번호)
 
 ---
 

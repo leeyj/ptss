@@ -580,10 +580,10 @@ with app.app_context():
     if not Config.query.filter_by(key="sftp_sort_by").first():
         db.session.add(Config(key="sftp_sort_by", value="name"))
 
-    # 기본 관리자 계정 생성
     if not User.query.filter_by(username="admin").first():
+        admin_password = os.getenv("PTSS_ADMIN_PASSWORD", "admin1234")
         admin_user = User(
-            username="admin", password_hash=generate_password_hash("[REDACTED]")
+            username="admin", password_hash=generate_password_hash(admin_password)
         )
         db.session.add(admin_user)
 
