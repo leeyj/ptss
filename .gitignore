@@ -23,7 +23,7 @@ uploads/*
 .idea/
 
 # PTSS Temporary
-tools/check_*.py
+tools/
 output.log
 .gemini/
 .agent/
