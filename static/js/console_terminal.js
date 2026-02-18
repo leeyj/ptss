@@ -77,6 +77,22 @@ window.PTSS.Terminal = {
 
         const fitAddon = new FitAddon.FitAddon();
         term.loadAddon(fitAddon);
+
+        // WebGL 가속 설정 확인 및 적용
+        if (settings.useWebgl && typeof WebglAddon !== 'undefined') {
+            try {
+                const webglAddon = new WebglAddon.WebglAddon();
+                webglAddon.onContextLoss(e => {
+                    console.warn("WebGL context lost. Falling back to canvas renderer.");
+                    webglAddon.dispose();
+                });
+                term.loadAddon(webglAddon);
+                console.log("WebGL acceleration enabled for tab:", tabId);
+            } catch (e) {
+                console.warn("WebGL acceleration could not be initialized:", e);
+            }
+        }
+
         term.open(termContainer);
 
         // **중요: ResizeObserver 적용**

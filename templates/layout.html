@@ -6,13 +6,13 @@
     <title>PTSS - Premium Terminal & SFTP System</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=4">
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=4"></script>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
     {% if session.user_id %}
-    <div class="sidebar">
+    <div class="sidebar" style="position: relative; z-index: 100;">
         <div class="sidebar-header">
             <span>⚡ PTSS</span>
             <span class="toggle-btn" onclick="toggleSidebar()">☰</span>
@@ -40,14 +40,14 @@
             </a>
         </div>
         
-        <div style="margin-top: auto; padding: 20px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2);">
-            <div class="sidebar-footer-user" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                <div style="width: 32px; height: 32px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--bg-color); font-weight: bold; cursor: pointer; flex-shrink: 0;" onclick="location.href='/profile'">
+        <div class="sidebar-footer">
+            <div class="sidebar-footer-user">
+                <div class="user-avatar" onclick="location.href='/profile'">
                     {{ session.username[0]|upper if session.username else '?' }}
                 </div>
-                <div class="sidebar-footer-text" style="flex: 1; min-width: 0;">
-                    <div style="font-size: 0.9rem; font-weight: 600; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ session.username or 'Guest' }}</div>
-                    <a href="/profile" style="font-size: 0.75rem; color: var(--text-muted); text-decoration: none;">내 프로필</a>
+                <div class="sidebar-footer-text">
+                    <div class="username-display">{{ session.username or 'Guest' }}</div>
+                    <a href="/profile" class="profile-link">내 프로필</a>
                 </div>
             </div>
             {% if session.role == 'admin' %}
@@ -69,5 +69,7 @@
     <div class="main-content" style="{% if not session.user_id %}padding: 0; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at top right, #1e293b, #0f172a);{% endif %}">
         {% block content %}{% endblock %}
     </div>
+
+    <!-- Debug script removed for production cleanup, but can be re-added if needed -->
 </body>
 </html>

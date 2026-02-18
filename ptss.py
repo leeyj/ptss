@@ -1,116 +1,88 @@
-import eventlet
+import warnings
 
-eventlet.monkey_patch()  # 필수: 웹소켓과 다른 라이브러리 간의 비동기 호환성 확보
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-from flask import (
+import eventlet  # type: ignore
+
+eventlet.monkey_patch()  # type: ignore
+
+import os
+
+# import sys
+# import functools
+# from datetime import datetime
+from collections import deque
+
+from flask import (  # type: ignore
     Flask,
-    render_template,
     request,
     redirect,
     url_for,
-    jsonify,
-    send_file,
     session,
-    flash,
 )
-from flask_sqlalchemy import SQLAlchemy
-from flask_socketio import SocketIO, emit
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
-from functools import wraps
-import os
-import io
-from ssh_manager import SSHManager
-from cryptography.fernet import Fernet
-from dotenv import load_dotenv
+from flask_socketio import SocketIO, emit  # type: ignore
 
-# .env 로드 및 마스터 키 설정
-load_dotenv()
-MASTER_KEY = os.getenv("PTSS_MASTER_KEY")
-if not MASTER_KEY:
-    # 키가 없을 경우 임시 생성 (운영 환경에서는 반드시 .env에 고정 보관 필요)
-    MASTER_KEY = Fernet.generate_key().decode()
-cipher_suite = Fernet(MASTER_KEY.encode())
+# from flask_socketio import disconnect
+# from werkzeug.security import generate_password_hash, check_password_hash
+# from cryptography.fernet import Fernet  # type: ignore
+from dotenv import load_dotenv  # type: ignore
 
-
-_cipher_suite = None
-
-
-def get_cipher_suite():
-    global _cipher_suite
-    if _cipher_suite:
-        return _cipher_suite
-
-    # strictly use database for master key after setup
-    # if not in db (initial state), we use a session-based or temporary fixed key for initial setup only
-    key = None
-    try:
-        # we need to be careful with app context here as this might be called outside requests
-        with app.app_context():
-            conf = Config.query.filter_by(key="PTSS_MASTER_KEY").first()
-            if conf:
-                key = conf.value.strip()
-    except Exception:
-        pass
-
-    if not key:
-        # fallback for pre-setup phase (not for production storage)
-        # in a real scenario, this would be a constant or derived from a system secret
-        key = "PTSS_INITIAL_SETUP_KEY_CHANGE_ME_NOW"
-        # while technically a hardcoded string, it's only a placeholder until setup is completed.
-
-    # Ensure key is 32 bytes and base64 encoded for Fernet
-    if len(key) != 44:  # Standard Fernet key length in base64
-        import base64
-        import hashlib
-
-        key = base64.urlsafe_b64encode(hashlib.sha256(key.encode()).digest()).decode()
-
-    _cipher_suite = Fernet(key.encode())
-    return _cipher_suite
-
-
-def encrypt_data(data: str) -> str:
-    if not data:
-        return None
-    suite = get_cipher_suite()
-    return suite.encrypt(data.encode()).decode()
-
-
-def decrypt_data(encrypted_data: str) -> str:
-    if not encrypted_data:
-        return None
-    suite = get_cipher_suite()
-    return suite.decrypt(encrypted_data.encode()).decode()
-
-
-app = Flask(__name__)
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "ptss.db")
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SECRET_KEY"] = os.urandom(24)
-app.config["UPLOAD_FOLDER"] = "uploads"
-os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-
-
-from database import db
-
-db.init_app(app)
-
-from models import Host, History, Config, User, Script
-from blueprints.api import bp as api_bp
-from state import (
+from core.database import db  # type: ignore
+from core.models import Host, History, Config, User  # type: ignore
+from core.state import (  # type: ignore
     ssh_sessions,
     monitoring_sessions,
     active_shells,
     active_sids,
     session_backlogs,
+    terminal_buffers,
     sid_to_info,
     sid_to_host,
+    host_watchers,
 )
-from collections import deque
+from core.ssh_manager import SSHManager  # type: ignore
+from core.crypto import decrypt_data  # type: ignore
 
+# Blueprints
+from blueprints.api import bp as api_bp  # type: ignore
+from blueprints.auth import bp as auth_bp  # type: ignore
+from blueprints.main import bp as main_bp  # type: ignore
+from blueprints.admin import bp as admin_bp  # type: ignore
+from blueprints.history import bp as history_bp  # type: ignore
+from blueprints.terminal import bp as terminal_bp  # type: ignore
+from blueprints.scripts import bp as scripts_bp  # type: ignore
+
+app = Flask(__name__)
+basedir = os.path.abspath(os.path.dirname(__file__))
+
+load_dotenv()
+db_url = os.getenv("DATABASE_URL")
+
+if not db_url:
+    # .env가 없거나 값이 비어있을 경우 기본값 사용
+    db_url = "sqlite:///" + os.path.join(basedir, "ptss.db")
+elif db_url.startswith("sqlite:///"):
+    # 상대경로 처리를 위해 sqlite:/// 뒤에 basedir을 결합 (선택 사항이나 안전을 위해)
+    # 다만 .env에 "sqlite:///ptss.db" 라고 적혀있으면 그대로 둬도 됨 (상대경로 인식함)
+    # 하지만 절대경로 변환을 원하면 파싱해야 함. 여기서는 단순하게 처리.
+    pass
+
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SECRET_KEY"] = os.urandom(24)
+app.config["UPLOAD_FOLDER"] = "uploads"
+os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
+db.init_app(app)
+
+# Register Blueprints
 app.register_blueprint(api_bp)
+app.register_blueprint(auth_bp)
+app.register_blueprint(main_bp)
+app.register_blueprint(admin_bp)
+app.register_blueprint(history_bp)
+app.register_blueprint(terminal_bp)
+app.register_blueprint(scripts_bp)
 
 socketio = SocketIO(
     app,
@@ -120,12 +92,9 @@ socketio = SocketIO(
     engineio_logger=True,
 )
 
-# Global SSH Manager & Session tracking (Moved to state.py)
-
 
 @app.before_request
 def check_setup():
-    # 정적 파일이나 /setup 경로는 제외
     if (
         request.path.startswith("/static")
         or request.path == "/setup"
@@ -134,127 +103,94 @@ def check_setup():
         return
 
     # 사용자가 하나도 없으면 /setup으로 리디렉션
+    if not User.query.first():
+        return redirect(url_for("auth.setup"))
+
+
+@app.context_processor
+def inject_hosts():
+    return {"all_hosts": Host.query.all()}
+
+
+monitoring_failures = {}
+
+
+def connect_and_monitor(host_id):
+    """Helper to connect for monitoring if not already connected."""
+    if host_id in monitoring_sessions:
+        return True, "Already connected"
+
     with app.app_context():
-        if not User.query.first():
-            return redirect(url_for("setup"))
+        host = Host.query.get(host_id)
+        if not host:
+            return False, "Host not found"
 
+        try:
+            decrypted_pw = decrypt_data(host.password) if host.password else None
+            decrypted_key = (
+                decrypt_data(host.encrypted_key) if host.encrypted_key else None
+            )
+            pkey_content = decrypted_key
 
-@app.route("/setup", methods=["GET", "POST"])
-def setup():
-    if User.query.first():
-        flash("이미 초기 설정이 완료되었습니다.")
-        return redirect(url_for("login"))
+            ka_conf = Config.query.filter_by(key="ssh_keepalive_interval").first()
+            keepalive_val = int(ka_conf.value) if ka_conf else 0
 
-    if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
-        master_key = request.form.get("master_key")
-
-        # 관리자 생성
-        new_admin = User(
-            username=username,
-            password_hash=generate_password_hash(password),
-            role="admin",
-        )
-        db.session.add(new_admin)
-
-        # 마스터 키 업데이트 (DB 설정값에 저장)
-        conf_key = Config.query.filter_by(key="PTSS_MASTER_KEY").first()
-        if not conf_key:
-            conf_key = Config(key="PTSS_MASTER_KEY", value=master_key)
-            db.session.add(conf_key)
-        else:
-            conf_key.value = master_key
-
-        db.session.commit()
-        flash("초기 설정이 완료되었습니다. 로그인을 진행해주세요.")
-        return redirect(url_for("login"))
-
-    # 기본 생성된 키 제공 (UI에서 편집 가능하게)
-    from cryptography.fernet import Fernet
-
-    temp_key = Fernet.generate_key().decode()
-    return render_template("setup.html", default_key=temp_key)
-
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "user_id" not in session:
-            return redirect(url_for("login"))
-        return f(*args, **kwargs)
-
-    return decorated_function
-
-
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "user_id" not in session:
-            return redirect(url_for("login"))
-        user = User.query.get(session["user_id"])
-        if not user or user.role != "admin":
-            flash("관리자 권한이 필요합니다.")
-            return redirect(url_for("index"))
-        return f(*args, **kwargs)
-
-    return decorated_function
-
-
-@app.route("/")
-@login_required
-def index():
-    hosts = Host.query.all()
-    # 활성화된 호스트 ID 목록 전달 (프론트엔드 모니터링용)
-    active_hosts = list(ssh_sessions.keys())
-    return render_template("index.html", hosts=hosts, active_hosts=active_hosts)
+            manager = SSHManager()
+            success, message = manager.connect(
+                host.hostname,
+                host.port,
+                host.username,
+                password=decrypted_pw,
+                pkey_content=pkey_content,
+                keepalive=keepalive_val,
+            )
+            if success:
+                monitoring_sessions[host.id] = manager
+                return True, "Connected"
+            else:
+                return False, message
+        except Exception as e:
+            return False, str(e)
 
 
 def stats_monitoring_task():
-    """DB의 모든 호스트를 순회하며 실시간 상태 수집 (모니터링 전용 세션 사용)"""
+    """모니터링 세션이 활성화된 호스트만 상태 수집"""
     print("Dashboard Monitoring Task Active.")
     while True:
-        socketio.sleep(5)  # 5초 주기
         with app.app_context():
-            try:
-                hosts = Host.query.all()
-                for host in hosts:
-                    manager = monitoring_sessions.get(host.id)
+            # 활성 모니터링 세션만 순회 (keys를 리스트로 복사하여 순회 중 변경 오류 방지)
+            active_ids = list(monitoring_sessions.keys())
+            for host_id in active_ids:
+                manager = monitoring_sessions.get(host_id)
+                if not manager:
+                    continue
 
-                    # 1. 세션이 없으면 자동 접속 시도
-                    if not manager:
-                        print(f"Auto-connecting to {host.name} for monitoring...")
-                        manager = SSHManager()
-
-                        # 암호화된 키가 있다면 복호화하여 전달
-                        pkey_content = decrypt_data(host.encrypted_key)
-
-                        success, _ = manager.connect(
-                            host.hostname,
-                            host.port,
-                            host.username,
-                            host.password,
-                            pkey_content=pkey_content,
-                        )
-                        if success:
-                            monitoring_sessions[host.id] = manager
-                            socketio.emit(
-                                "server_stats", {"host_id": host.id, "stats": "online"}
-                            )
-                        else:
-                            continue
-
-                    # 2. 상태 수집 및 전송
+                try:
                     stats = manager.get_system_stats()
                     if stats:
                         socketio.emit(
-                            "server_stats", {"host_id": host.id, "stats": stats}
+                            "server_stats",
+                            {"host_id": host_id, "stats": stats},
+                            room=f"monitoring_{host_id}",
                         )
-            except Exception as e:
-                print(f"Monitoring Loop Error: {e}")
+                    else:
+                        # 통신 실패 시 세션 정리
+                        print(f"[Monitoring] Stats fail for {host_id}. Closing.")
+                        try:
+                            manager.close()
+                        except:
+                            pass
+                        monitoring_sessions.pop(host_id, None)
 
+                        socketio.emit(
+                            "host_status_change",
+                            {"host_id": host_id, "status": "offline"},
+                            room=f"monitoring_{host_id}",
+                        )
+                except Exception as e:
+                    print(f"[Monitoring Task Error] {host_id}: {str(e)}")
 
-monitoring_started = False
+        socketio.sleep(5)
 
 
 @socketio.on("connect")
@@ -262,296 +198,116 @@ def handle_connect():
     print(f"Client connected: {request.sid}")
 
 
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
-        user = User.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password_hash, password):
-            session["user_id"] = user.id
-            session["username"] = user.username
-            session["role"] = user.role
-            return redirect(url_for("index"))
-        flash("로그인 정보가 올바르지 않습니다.")
-    return render_template("login.html")
+@socketio.on("disconnect")
+def handle_disconnect_socket():
+    sid = request.sid
+    print(f"Client disconnected: {sid}")
+
+    # 1. Monitoring Watchers Cleanup
+    for host_id, watchers in list(host_watchers.items()):
+        if sid in watchers:
+            watchers.discard(sid)
+            # socketio.leave_room(f"monitoring_{host_id}", sid) # disconnect 시에는 자동 해제됨
+
+            if not watchers and host_id in monitoring_sessions:
+                print(f"[Auto-Stop] No watchers for {host_id}. Disconnecting.")
+                manager = monitoring_sessions.pop(host_id, None)
+                if manager:
+                    try:
+                        manager.close()
+                    except:
+                        pass
+                socketio.emit(
+                    "host_status_change",
+                    {"host_id": host_id, "status": "offline"},
+                    room=f"monitoring_{host_id}",
+                )
+            if not watchers:
+                del host_watchers[host_id]
+
+    # 2. Terminal Session Cleanup
+    session_key = sid_to_info.pop(sid, None)
+    if session_key:
+        active_sids.pop(session_key, None)
+        with app.app_context():
+            retention = Config.query.filter_by(key="session_retention").first()
+            if retention and retention.value == "terminate":
+                shell = active_shells.pop(session_key, None)
+                if shell:
+                    print(f"[Policy] Terminating shell for {session_key}")
 
 
-@app.route("/logout")
-def logout():
-    session.pop("user_id", None)
-    session.pop("username", None)
-    return redirect(url_for("login"))
+@socketio.on("start_monitoring")
+def handle_start_monitoring(data):
+    host_id = data.get("host_id")
+    sid = request.sid
+    if not host_id:
+        return
+
+    print(f"Start monitoring request for {host_id} from {sid}")
+
+    # 구독자 추가 및 룸 접속
+    if host_id not in host_watchers:
+        host_watchers[host_id] = set()
+    host_watchers[host_id].add(sid)
+
+    from flask_socketio import join_room  # type: ignore
+
+    join_room(f"monitoring_{host_id}")
+
+    # 이미 연결되어 있다면 성공 응답
+    if host_id in monitoring_sessions:
+        emit("monitoring_started", {"host_id": host_id, "status": "active"})
+        socketio.emit(
+            "host_status_change",
+            {"host_id": host_id, "status": "online"},
+            room=f"monitoring_{host_id}",
+        )
+        return
+
+    # 연결 시도
+    success, msg = connect_and_monitor(host_id)
+    if success:
+        emit("monitoring_started", {"host_id": host_id, "status": "active"})
+        socketio.emit(
+            "host_status_change",
+            {"host_id": host_id, "status": "online"},
+            room=f"monitoring_{host_id}",
+        )
+    else:
+        emit("monitoring_error", {"host_id": host_id, "message": msg})
 
 
-@app.route("/history")
-@login_required
-def view_history():
-    page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 20, type=int)  # 20/30/50 선택 가능
+@socketio.on("stop_monitoring")
+def handle_stop_monitoring(data):
+    host_id = data.get("host_id")
+    sid = request.sid
+    if not host_id:
+        return
 
-    pagination = History.query.order_by(History.timestamp.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-    histories = pagination.items
-    return render_template(
-        "history.html", histories=histories, pagination=pagination, per_page=per_page
-    )
+    print(f"Stop monitoring request for {host_id} from {sid}")
 
+    if host_id in host_watchers:
+        host_watchers[host_id].discard(sid)
 
-@app.route("/profile", methods=["GET", "POST"])
-@login_required
-def profile():
-    user = User.query.get(session["user_id"])
-    if request.method == "POST":
-        new_password = request.form.get("password")
-        if new_password:
-            user.password_hash = generate_password_hash(new_password)
-            db.session.commit()
-            flash("비밀번호가 성공적으로 변경되었습니다.")
-            return redirect(url_for("profile"))
-    return render_template("profile.html", user=user)
+        from flask_socketio import leave_room  # type: ignore
 
+        leave_room(f"monitoring_{host_id}")
 
-@app.route("/admin/users", methods=["GET", "POST"])
-@admin_required
-def manage_users():
-    if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
-        role = request.form.get("role", "user")
-
-        if User.query.filter_by(username=username).first():
-            flash("이미 존재하는 사용자 이름입니다.")
-        else:
-            new_user = User(
-                username=username,
-                password_hash=generate_password_hash(password),
-                role=role,
+        if not host_watchers[host_id]:
+            # 구독자가 없으면 연결 해제
+            print(f"No watchers for {host_id}. Closing connection.")
+            manager = monitoring_sessions.pop(host_id, None)
+            if manager:
+                try:
+                    manager.close()
+                except:
+                    pass
+            socketio.emit(
+                "host_status_change",
+                {"host_id": host_id, "status": "offline"},
+                room=f"monitoring_{host_id}",
             )
-            db.session.add(new_user)
-            db.session.commit()
-            flash(f"사용자 {username}이(가) 등록되었습니다.")
-        return redirect(url_for("manage_users"))
-
-    users = User.query.all()
-    return render_template("users.html", users=users)
-
-
-@app.route("/admin/users/delete/<int:user_id>", methods=["POST"])
-@admin_required
-def delete_user(user_id):
-    if user_id == session["user_id"]:
-        flash("자기 자신은 삭제할 수 없습니다.")
-        return redirect(url_for("manage_users"))
-
-    user = User.query.get(user_id)
-    if user:
-        if user.username == "admin":
-            flash("기본 관리자 계정은 삭제할 수 없습니다.")
-        else:
-            db.session.delete(user)
-            db.session.commit()
-            flash("사용자가 삭제되었습니다.")
-    return redirect(url_for("manage_users"))
-
-
-@app.route("/settings", methods=["GET", "POST"])
-@login_required
-def view_settings():
-    if request.method == "POST":
-        log_mode = request.form.get("log_view_mode")
-        sftp_sort = request.form.get("sftp_sort_by")
-
-        # Log view mode update
-        conf_log = Config.query.filter_by(key="log_view_mode").first()
-        if not conf_log:
-            conf_log = Config(key="log_view_mode", value=log_mode)
-            db.session.add(conf_log)
-        else:
-            conf_log.value = log_mode
-
-        # SFTP sort update
-        conf_sort = Config.query.filter_by(key="sftp_sort_by").first()
-        if not conf_sort:
-            conf_sort = Config(key="sftp_sort_by", value=sftp_sort)
-            db.session.add(conf_sort)
-        else:
-            conf_sort.value = sftp_sort
-
-        db.session.commit()
-        return redirect(url_for("view_settings"))
-
-    log_mode = Config.query.filter_by(key="log_view_mode").first()
-    mode_val = log_mode.value if log_mode else "preview"
-
-    sftp_sort = Config.query.filter_by(key="sftp_sort_by").first()
-    sort_val = sftp_sort.value if sftp_sort else "name"
-
-    return render_template(
-        "settings.html", log_view_mode=mode_val, sftp_sort_by=sort_val
-    )
-
-
-@app.route("/log_view/<int:host_id>")
-@login_required
-def log_view_standalone(host_id):
-    host = Host.query.get_or_404(host_id)
-    path = request.args.get("path")
-    log_mode = Config.query.filter_by(key="log_view_mode").first()
-    mode_val = log_mode.value if log_mode else "preview"
-    return render_template(
-        "log_view.html", host=host, path=path, log_view_mode=mode_val
-    )
-
-
-@app.route("/host/add", methods=["POST"])
-@admin_required
-def add_host():
-    name = request.form["name"]
-    hostname = request.form["hostname"]
-    port = int(request.form["port"])
-    username = request.form["username"]
-    auth_type = request.form["auth_type"]
-    password = request.form.get("password")
-    key_content = request.form.get("key_content")
-    key_file = request.files.get("key_file")
-
-    if key_file and key_file.filename != "":
-        key_content = key_file.read().decode("utf-8")
-
-    # 1. 테스트 연결 수행
-    manager = SSHManager()
-    success, message = manager.connect(
-        hostname, port, username, password=password, pkey_content=key_content
-    )
-    manager.close()
-
-    if not success:
-        return jsonify({"success": False, "error": f"연결 테스트 실패: {message}"}), 400
-
-    # 2. 성공 시 암호화하여 저장
-    new_host = Host(
-        name=name,
-        hostname=hostname,
-        port=port,
-        username=username,
-        auth_type=auth_type,
-        password=encrypt_data(password) if password else None,
-        encrypted_key=encrypt_data(key_content) if key_content else None,
-    )
-    db.session.add(new_host)
-    db.session.commit()
-
-    return jsonify({"success": True, "message": f"호스트 {name}이(가) 추가되었습니다."})
-
-
-@app.route("/connect/<int:host_id>")
-@login_required
-def connect_host(host_id):
-    host = Host.query.get_or_404(host_id)
-    user_id = session.get("user_id")
-
-    # 이미 세션이 있는지 확인
-    manager = ssh_sessions.get((user_id, host_id))
-    if (
-        manager
-        and manager.client
-        and manager.client.get_transport()
-        and manager.client.get_transport().is_active()
-    ):
-        log_mode = Config.query.filter_by(key="log_view_mode").first()
-        mode_val = log_mode.value if log_mode else "preview"
-        sftp_sort = Config.query.filter_by(key="sftp_sort_by").first()
-        sort_val = sftp_sort.value if sftp_sort else "name"
-        return render_template(
-            "console.html", host=host, log_view_mode=mode_val, sftp_sort_by=sort_val
-        )
-
-    # 신규 연결 - 저장된 데이터 복호화
-    decrypted_pw = decrypt_data(host.password) if host.password else None
-    decrypted_key = decrypt_data(host.encrypted_key) if host.encrypted_key else None
-
-    manager = SSHManager()
-    success, message = manager.connect(
-        host.hostname,
-        host.port,
-        host.username,
-        password=decrypted_pw,
-        pkey_content=decrypted_key,
-    )
-
-    if success:
-        ssh_sessions[(user_id, host_id)] = manager
-        log_mode = Config.query.filter_by(key="log_view_mode").first()
-        mode_val = log_mode.value if log_mode else "preview"
-        sftp_sort = Config.query.filter_by(key="sftp_sort_by").first()
-        sort_val = sftp_sort.value if sftp_sort else "name"
-        return render_template(
-            "console.html", host=host, log_view_mode=mode_val, sftp_sort_by=sort_val
-        )
-    else:
-        # 에러 정보를 템플릿에 전달하여 예쁜 모달/안내창으로 유도
-        return render_template(
-            "error.html",
-            title="연결 실패",
-            message=f"서버 접속에 실패했습니다: {message}",
-            back_url="/",
-        )
-
-
-@app.route("/host/delete/<int:host_id>", methods=["POST"])
-@admin_required
-def delete_host(host_id):
-    host = Host.query.get_or_404(host_id)
-    db.session.delete(host)
-    db.session.commit()
-    flash(f"호스트 {host.name}이(가) 삭제되었습니다.")
-    return redirect(url_for("index"))
-
-
-@app.route("/connect/<int:host_id>")
-@login_required
-def connect(host_id):
-    host = Host.query.get_or_404(host_id)
-    user_role = session.get("role")
-
-    # 일반 사용자의 root 계정 접속 제한
-    if user_role != "admin" and host.username == "root":
-        return "일반 사용자는 root 계정으로 접속할 수 없습니다. (관리자 권한 필요)", 403
-
-    manager = SSHManager()
-
-    # 암호화된 키 복호화
-    pkey_content = decrypt_data(host.encrypted_key)
-
-    success, message = manager.connect(
-        host.hostname,
-        host.port,
-        host.username,
-        password=host.password,
-        pkey_content=pkey_content,
-    )
-
-    if success:
-        user_id = session["user_id"]
-        ssh_sessions[(user_id, host_id)] = manager
-        log_mode = Config.query.filter_by(key="log_view_mode").first()
-        mode_val = log_mode.value if log_mode else "preview"
-
-        sftp_sort = Config.query.filter_by(key="sftp_sort_by").first()
-        sort_val = sftp_sort.value if sftp_sort else "name"
-
-        return render_template(
-            "console.html", host=host, log_view_mode=mode_val, sftp_sort_by=sort_val
-        )
-    else:
-        return f"Connection Failed: {message}", 400
-
-
-@app.context_processor
-def inject_hosts():
-    return {"all_hosts": Host.query.all()}
 
 
 @socketio.on("terminal_connect")
@@ -561,25 +317,31 @@ def handle_terminal_connect(data):
     sid = request.sid
     user_id = session.get("user_id")
 
-    # 세션 식별키
-    session_key = (user_id, host_id, tab_id)
-    sid_to_info[sid] = session_key
+    if not user_id:
+        emit(
+            "terminal_output",
+            {"data": "\r\n[ERROR] Unauthorized\r\n", "tab_id": tab_id},
+        )
+        return
+
     sid_to_host[sid] = host_id
+    session_key = (user_id, host_id, tab_id)
     active_sids[session_key] = sid
+    sid_to_info[sid] = session_key
 
     manager = ssh_sessions.get((user_id, host_id))
     if not manager:
         emit(
             "terminal_output",
-            {"data": "\r\n[PTSS] SSH 매니저를 찾을 수 없습니다.\r\n", "tab_id": tab_id},
+            {
+                "data": "\r\n[ERROR] SSH Session lost. Please reconnect.\r\n",
+                "tab_id": tab_id,
+            },
         )
         return
 
-    # 이미 존재하는 셸 세션이 있는지 확인 (퍼시스턴스)
     shell = active_shells.get(session_key)
-
     if shell:
-        # 1. 기존 백로그 전송 (복구)
         backlog = session_backlogs.get(session_key, [])
         if backlog:
             emit("terminal_output", {"data": "".join(list(backlog)), "tab_id": tab_id})
@@ -588,7 +350,6 @@ def handle_terminal_connect(data):
             {"data": "\r\n[PTSS] 기존 세션 복구됨...\r\n", "tab_id": tab_id},
         )
     else:
-        # 2. 신규 셸 생성
         shell = manager.get_shell()
         if not shell:
             emit(
@@ -601,10 +362,9 @@ def handle_terminal_connect(data):
             return
 
         active_shells[session_key] = shell
-        session_backlogs[session_key] = deque(maxlen=2000)  # 약 2000라인 가량 보관
+        session_backlogs[session_key] = deque(maxlen=2000)
 
         def shell_to_socket(s_key):
-            """백그라운드에서 셸 출력을 읽어 소켓으로 브로드캐스팅 및 백로그 저장"""
             while True:
                 target_shell = active_shells.get(s_key)
                 if not target_shell:
@@ -614,11 +374,8 @@ def handle_terminal_connect(data):
                         output = target_shell.recv(4096).decode(
                             "utf-8", errors="ignore"
                         )
-                        # 백로그에 추가
                         if s_key in session_backlogs:
                             session_backlogs[s_key].append(output)
-
-                        # 현재 활성화된 SID가 있으면 출력 전송
                         current_sid = active_sids.get(s_key)
                         if current_sid:
                             socketio.emit(
@@ -628,7 +385,6 @@ def handle_terminal_connect(data):
                             )
                     socketio.sleep(0.01)
                 except Exception:
-                    # 세션 종료 시 정리
                     active_shells.pop(s_key, None)
                     active_sids.pop(s_key, None)
                     session_backlogs.pop(s_key, None)
@@ -647,35 +403,60 @@ def handle_terminal_input(data):
     tab_id = data.get("tab_id", "default")
     user_id = session.get("user_id")
     host_id = sid_to_host.get(sid)
-
     if not host_id:
         return
 
     session_key = (user_id, host_id, tab_id)
     shell = active_shells.get(session_key)
-
-    if not shell:
-        return
-
     input_data = data.get("data")
-
-    # 셸에 즉시 전송
-    # 3. 일반 사용자의 su 명령어 사용 제한
     user_role = session.get("role")
-    if user_role != "admin" and (
-        input_data.strip().startswith("su ") or input_data.strip() == "su"
-    ):
-        socketio.emit(
-            "terminal_output",
-            {
-                "data": "\r\n[PTSS] 일반 사용자는 su 명령어를 사용할 수 없습니다. (관리자 권한 필요)\r\n",
-                "tab_id": tab_id,
-            },
-            room=sid,
-        )
-        return
 
-    shell.send(input_data)
+    if user_role != "admin":
+        if session_key not in terminal_buffers:
+            terminal_buffers[session_key] = ""
+
+        for char in input_data:
+            if char in ["\r", "\n"]:
+                full_cmd = terminal_buffers[session_key].strip()
+                if full_cmd:
+                    user = User.query.get(user_id)
+                    if user and user.restricted_commands:
+                        blacklist = [
+                            k.strip()
+                            for k in user.restricted_commands.split(",")
+                            if k.strip()
+                        ]
+                        for keyword in blacklist:
+                            if keyword and keyword in full_cmd:
+                                if shell:
+                                    shell.send("\x15")
+                                terminal_buffers[session_key] = ""
+                                socketio.emit(
+                                    "terminal_output",
+                                    {
+                                        "data": f"\r\n\x1b[31m[PTSS] 금지된 명령어가 포함되어 있습니다: '{keyword}'\x1b[0m\r\n",
+                                        "tab_id": tab_id,
+                                    },
+                                    room=sid,
+                                )
+                                new_hist = History(
+                                    host_id=host_id,
+                                    user_id=user_id,
+                                    action_type="BLOCKED",
+                                    detail=full_cmd,
+                                )
+                                db.session.add(new_hist)
+                                db.session.commit()
+                                return
+                terminal_buffers[session_key] = ""
+            elif char in ["\x7f", "\x08"]:
+                if len(terminal_buffers[session_key]) > 0:
+                    terminal_buffers[session_key] = terminal_buffers[session_key][:-1]
+            elif isinstance(char, str) and ord(char) >= 32:
+                terminal_buffers[session_key] += char
+
+    if shell:
+        shell.send(input_data)
 
 
 @socketio.on("terminal_command")
@@ -683,68 +464,44 @@ def handle_terminal_command(data):
     sid = request.sid
     cmd = data.get("command", "").strip()
     host_id = sid_to_host.get(sid)
+    s_info = sid_to_info.get(sid)
+    user_id = s_info[0] if s_info else session.get("user_id")
 
     if host_id and cmd:
         with app.app_context():
-            new_hist = History(host_id=host_id, action_type="COMMAND", detail=cmd)
+            new_hist = History(
+                host_id=host_id, user_id=user_id, action_type="COMMAND", detail=cmd
+            )
             db.session.add(new_hist)
             db.session.commit()
-            print(f"[History] Saved: {cmd} (Host: {host_id})")
 
 
 @socketio.on("terminal_resize")
 def handle_terminal_resize(data):
     sid = request.sid
-    tab_id = data.get("tab_id", "default")
-    user_id = session.get("user_id")
     host_id = sid_to_host.get(sid)
+    user_id = session.get("user_id")
+    tab_id = data.get("tab_id", "default")
 
     if host_id:
-        session_key = (user_id, host_id, tab_id)
-        shell = active_shells.get(session_key)
-        if shell:
-            try:
-                shell.resize_pty(
-                    width=int(data.get("cols", 80)), height=int(data.get("rows", 24))
-                )
-            except:
-                pass
-
-
-@socketio.on("disconnect")
-def handle_disconnect():
-    sid = request.sid
-    # SID 매핑 정보 제거 (셸은 유지됨)
-    session_key = sid_to_info.pop(sid, None)
-    if session_key:
-        # 현재 활성 SID가 내 것이라면 제거
-        if active_sids.get(session_key) == sid:
-            active_sids.pop(session_key, None)
-    sid_to_host.pop(sid, None)
-    print(f"Client disconnected and SID mapping cleared: {sid}")
-
-
-# Automation Script Tool Routes
-@app.route("/scripts")
-@login_required
-def view_scripts():
-    scripts = Script.query.all()
-    hosts = Host.query.all()
-    return render_template("scripts.html", scripts=scripts, hosts=hosts)
+        manager = ssh_sessions.get((user_id, host_id))
+        if manager:
+            session_key = (user_id, host_id, tab_id)
+            shell = active_shells.get(session_key)
+            if shell:
+                shell.resize_pty(cols=data.get("cols", 80), rows=data.get("rows", 24))
 
 
 with app.app_context():
     db.create_all()
-    # 초기 설정값 보장
     if not Config.query.filter_by(key="log_view_mode").first():
         db.session.add(Config(key="log_view_mode", value="preview"))
     if not Config.query.filter_by(key="sftp_sort_by").first():
         db.session.add(Config(key="sftp_sort_by", value="name"))
-
+    if not Config.query.filter_by(key="session_retention").first():
+        db.session.add(Config(key="session_retention", value="maintain"))
     db.session.commit()
 
-
 if __name__ == "__main__":
-    # 서버 기동 시 모니터링 태스크 강제 시작
     socketio.start_background_task(stats_monitoring_task)
-    socketio.run(app, debug=False, host="0.0.0.0", port=6001)
+    socketio.run(app, debug=True, use_reloader=False, host="0.0.0.0", port=6001)

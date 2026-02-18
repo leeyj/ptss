@@ -4,7 +4,8 @@ window.PTSS.Settings = {
     config: {
         theme: 'default',
         fontSize: 14,
-        fontFamily: '"JetBrains Mono", monospace'
+        fontFamily: '"JetBrains Mono", monospace',
+        useWebgl: false
     },
 
     themes: {
@@ -73,9 +74,11 @@ window.PTSS.Settings = {
         // UI 요소가 존재하는지 확인 (설정 페이지 또는 콘솔 모달)
         const fontSizeInput = document.getElementById('settingFontSize');
         const fontFamilySelect = document.getElementById('settingFontFamily');
+        const webglToggle = document.getElementById('settingWebgl');
 
         if (fontSizeInput) fontSizeInput.value = this.config.fontSize;
         if (fontFamilySelect) fontFamilySelect.value = this.config.fontFamily;
+        if (webglToggle) webglToggle.checked = this.config.useWebgl;
 
         // Highlight selected theme
         document.querySelectorAll('.theme-item').forEach(el => {
@@ -104,6 +107,13 @@ window.PTSS.Settings = {
         this.config.fontFamily = family;
         this.applyToAll();
         this.saveToStorage();
+    },
+
+    setWebgl(enabled) {
+        this.config.useWebgl = enabled;
+        this.saveToStorage();
+        // WebGL은 터미널 재생성이 필요할 수 있으므로, 알림 메시지 출력 권장
+        console.log("WebGL Acceleration set to:", enabled);
     },
 
     applyToAll() {

@@ -1,4 +1,4 @@
-import paramiko
+import paramiko  # type: ignore
 import os
 
 
@@ -9,11 +9,18 @@ class SSHManager:
         self.current_path = "~"
 
     def connect(
-        self, hostname, port, username, password=None, key_path=None, pkey_content=None
+        self,
+        hostname,
+        port,
+        username,
+        password=None,
+        key_path=None,
+        pkey_content=None,
+        keepalive=0,
     ):
         try:
             self.client = paramiko.SSHClient()
-            self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # type: ignore
 
             if pkey_content:
                 # 메모리 상의 키 콘텐츠 직접 사용 (io.StringIO 활용)
@@ -21,21 +28,27 @@ class SSHManager:
 
                 key_file_obj = io.StringIO(pkey_content)
                 private_key = paramiko.RSAKey.from_private_key(key_file_obj)
-                self.client.connect(
+                self.client.connect(  # type: ignore
                     hostname, port=port, username=username, pkey=private_key
                 )
             elif key_path and os.path.exists(key_path):
                 private_key = paramiko.RSAKey.from_private_key_file(key_path)
-                self.client.connect(
+                self.client.connect(  # type: ignore
                     hostname, port=port, username=username, pkey=private_key
                 )
             else:
-                self.client.connect(
+                self.client.connect(  # type: ignore
                     hostname, port=port, username=username, password=password
                 )
 
+            # 세션 유지 설정 (Keepalive)
+            if keepalive > 0:
+                transport = self.client.get_transport()  # type: ignore
+                if transport:
+                    transport.set_keepalive(keepalive)
+
             # 접속 후 기초 경로 확인
-            stdin, stdout, stderr = self.client.exec_command("pwd")
+            stdin, stdout, stderr = self.client.exec_command("pwd")  # type: ignore
             self.current_path = stdout.read().decode().strip()
 
             return True, "Connected successfully"
@@ -139,7 +152,7 @@ class SSHManager:
             for attr in sftp.listdir_attr(path):
                 # 권한을 -rwxr-xr-x 형식 및 3자리 숫자 형식으로 변환
                 mode_str = stat.filemode(attr.st_mode)
-                mode_oct = oct(attr.st_mode)[-3:]
+                mode_oct = str(oct(attr.st_mode))[-3:]  # type: ignore
 
                 # 날짜 형식화 (YYYY-MM-DD HH:mm)
                 dt = datetime.fromtimestamp(attr.st_mtime)
@@ -165,7 +178,7 @@ class SSHManager:
             return None, "Not connected"
         try:
             cmd = f"tail -n {lines} {remote_path}"
-            stdin, stdout, stderr = self.client.exec_command(cmd)
+            stdin, stdout, stderr = self.client.exec_command(cmd)  # type: ignore
             return stdout.read().decode("utf-8", errors="ignore"), "Success"
         except Exception as e:
             return None, str(e)
@@ -214,7 +227,7 @@ class SSHManager:
                 "free | grep Mem | awk '{print $3/$2 * 100.0}'; "
                 "df / | awk 'NR==2 {print $5}' | sed 's/%//'"
             )
-            stdin, stdout, stderr = self.client.exec_command(cmd)
+            stdin, stdout, stderr = self.client.exec_command(cmd)  # type: ignore
             raw_out = stdout.read().decode().strip()
             stats = raw_out.splitlines()
 
@@ -245,11 +258,11 @@ class SSHManager:
     def close(self):
         if self.sftp:
             try:
-                self.sftp.close()
+                self.sftp.close()  # type: ignore
             except Exception:
                 pass
         if self.client:
             try:
-                self.client.close()
+                self.client.close()  # type: ignore
             except Exception:
                 pass

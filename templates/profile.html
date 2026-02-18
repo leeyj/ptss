@@ -45,11 +45,4 @@
         </form>
     </div>
 </div>
-
-<script>
-    document.querySelectorAll('input').forEach(input => {
-        input.addEventListener('focus', () => input.style.borderColor = 'var(--accent-color)');
-        input.addEventListener('blur', () => input.style.borderColor = 'var(--border-color)');
-    });
-</script>
 {% endblock %}

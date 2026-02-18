@@ -1,0 +1,45 @@
+/* 자동화 스크립트 도구 전용 스타일 */
+
+.script-item:hover {
+    background: rgba(56, 189, 248, 0.08);
+}
+
+.script-item.active {
+    background: linear-gradient(to right, rgba(56, 189, 248, 0.15), transparent);
+    border-left: 4px solid var(--accent-color) !important;
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+    border: none;
+    transition: all 0.3s;
+}
+
+.btn-success:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* 버튼 텍스트 강제 정렬 */
+.btn {
+    flex-direction: row !important;
+    display: flex !important;
+    gap: 8px !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.btn span {
+    font-size: 1.1rem;
+}
+
+#targetHost option {
+    padding: 10px;
+}
+
+/* 결과창 애니메이션 */
+#resultArea {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}

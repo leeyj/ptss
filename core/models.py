@@ -1,5 +1,4 @@
-from database import db
-from datetime import datetime
+from core.database import db  # type: ignore
 
 
 class Host(db.Model):
@@ -19,10 +18,17 @@ class Host(db.Model):
 
 class History(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    host_id = db.Column(db.Integer, db.ForeignKey("host.id"), nullable=False)
-    action_type = db.Column(db.String(20), nullable=False)  # COMMAND, UPLOAD, DOWNLOAD
-    detail = db.Column(db.Text, nullable=False)  # 명렁어나 파일명
-    extra_info = db.Column(db.Text)  # 크기, 경로 등
+    host_id = db.Column(
+        db.Integer, db.ForeignKey("host.id"), nullable=True
+    )  # 로그인 로그 등은 host_id가 없을 수 있음
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), nullable=True
+    )  # 비로그인 시도 대비
+    action_type = db.Column(
+        db.String(20), nullable=False
+    )  # COMMAND, SCRIPT, LOGIN, LOGOUT, AUTH_FAIL, FILE_VIEW 등
+    detail = db.Column(db.Text, nullable=False)  # 명렁어나 액션 상세 내역
+    extra_info = db.Column(db.Text)  # 크기, 경로, IP 주소 등
     timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
 
 
@@ -37,6 +43,10 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), default="user")  # 'admin' or 'user'
+    restricted_commands = db.Column(
+        db.Text, nullable=True
+    )  # 콤마로 구분된 금지 명령어 키워드
+    histories = db.relationship("History", backref="user", lazy=True)
 
 
 class Script(db.Model):

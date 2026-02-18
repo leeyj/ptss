@@ -46,6 +46,28 @@
                     </div>
                 </div>
 
+                <div style="margin-bottom: 30px;">
+                    <label style="display: block; margin-bottom: 12px; font-weight: 600;">SSH 세션 유지 (Keepalive)</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="number" name="ssh_keepalive_interval" value="{{ ssh_keepalive_interval }}" min="0" max="300" style="width: 100px; padding: 10px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; color: white;">
+                        <span style="color: var(--text-muted); font-size: 0.9rem;">초 (0: 비활성, 권장: 30~60초)</span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 30px;">
+                    <label style="display: block; margin-bottom: 12px; font-weight: 600;">터미널 세션 유지 정책</label>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="session_retention" value="maintain" {% if session_retention == 'maintain' %}checked{% endif %} style="width: auto; margin: 0;">
+                            <span>🏢 기업형 (창을 닫아도 연결 유지)</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="session_retention" value="terminate" {% if session_retention == 'terminate' %}checked{% endif %} style="width: auto; margin: 0;">
+                            <span>🏛️ 공공기관형 (창을 닫으면 즉시 종료)</span>
+                        </label>
+                    </div>
+                </div>
+
                 <button type="submit" class="btn btn-primary" style="width: 100%;">시스템 설정 저장</button>
             </form>
         </div>
@@ -95,6 +117,16 @@
                         <option value='Consolas, "Courier New", monospace'>Consolas / Courier</option>
                     </select>
                 </div>
+            </div>
+            
+            <div style="margin-bottom: 24px;">
+                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; background: rgba(56, 189, 248, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.1);">
+                    <div style="flex: 1;">
+                        <span style="display: block; font-weight: 600; color: var(--accent-color); margin-bottom: 4px;">🚀 GPU 가속 (WebGL)</span>
+                        <span style="display: block; font-size: 0.8rem; color: var(--text-muted);">대용량 출력 시 렌더링 성능을 획기적으로 향상시킵니다. (일부 환경에서 미지원 가능)</span>
+                    </div>
+                    <input type="checkbox" id="settingWebgl" onchange="PTSS.Settings.setWebgl(this.checked)" style="width: 24px; height: 24px; cursor: pointer;">
+                </label>
             </div>
             
             <p style="color: var(--text-muted); font-size: 0.85rem; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; line-height: 1.5;">

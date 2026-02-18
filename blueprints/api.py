@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, request, jsonify, session, send_file
-from database import db
-from models import History, Host, Script, User, Snippet
-from state import ssh_sessions, sid_to_host, shell_threads, input_buffers
+from flask import Blueprint, request, jsonify, session, send_file  # type: ignore
+from core.database import db  # type: ignore
+from core.models import History, Host, Script, User, Snippet  # type: ignore
+from core.state import ssh_sessions, sid_to_host, shell_threads, input_buffers  # type: ignore
 import os
 import io
 
@@ -45,6 +45,7 @@ def sftp_upload(host_id):
         size = file.stream.tell()
         new_hist = History(
             host_id=host_id,
+            user_id=user_id,
             action_type="UPLOAD",
             detail=file.filename,
             extra_info=f"Size: {size}, Path: {full_path}",
@@ -75,6 +76,7 @@ def sftp_download(host_id):
         file_obj.seek(0)
         new_hist = History(
             host_id=host_id,
+            user_id=user_id,
             action_type="DOWNLOAD",
             detail=filename,
             extra_info=f"Size: {size}, Remote: {remote_path}",
@@ -143,6 +145,7 @@ def sftp_write_text(host_id):
         # 히스토리 기록
         new_hist = History(
             host_id=host_id,
+            user_id=user_id,
             action_type="EDIT",
             detail=os.path.basename(path),
             extra_info=f"Remote Edit: {path}",
@@ -246,6 +249,7 @@ def execute_script_remote():
     # 히스토리에 기록
     new_hist = History(
         host_id=host_id,
+        user_id=user_id,
         action_type="SCRIPT",
         detail=f"Executed script: {script.name}",
     )

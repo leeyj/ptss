@@ -1,5 +1,9 @@
 {% extends "layout.html" %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}?v=2">
+{% endblock %}
+
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
     <h1>호스트 관리</h1>
@@ -17,13 +21,13 @@
     
     <div id="dashboard-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
         {% for host in hosts %}
-        <div class="host-card" id="host-card-{{ host.id }}" style="background: rgba(30, 41, 59, 0.5); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; transition: all 0.3s ease;">
+        <div class="host-card" id="host-card-{{ host.id }}">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
                 <div>
                     <h3 style="margin: 0; font-size: 1.1rem; color: white;">{{ host.name }}</h3>
                     <p style="margin: 5px 0 0; font-size: 0.8rem; color: var(--text-muted);">{{ host.username }}@{{ host.hostname }}</p>
                 </div>
-                <div id="status-{{ host.id }}" class="status-badge offline" style="padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Offline</div>
+                <div id="status-{{ host.id }}" class="status-badge offline">Offline</div>
             </div>
             
             <!-- 모니터링 지표 -->
@@ -34,8 +38,8 @@
                         <span style="color: var(--text-muted);">CPU Usage</span>
                         <span id="cpu-val-{{ host.id }}" style="font-weight: 600;">--%</span>
                     </div>
-                    <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
-                        <div id="cpu-bar-{{ host.id }}" style="width: 0%; height: 100%; background: #38bdf8; transition: width 1s ease;"></div>
+                    <div class="progress-bar-container">
+                        <div id="cpu-bar-{{ host.id }}" class="progress-bar" style="width: 0%; background: #38bdf8;"></div>
                     </div>
                 </div>
                 <!-- RAM -->
@@ -44,8 +48,8 @@
                         <span style="color: var(--text-muted);">RAM Usage</span>
                         <span id="ram-val-{{ host.id }}" style="font-weight: 600;">--%</span>
                     </div>
-                    <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
-                        <div id="ram-bar-{{ host.id }}" style="width: 0%; height: 100%; background: #a855f7; transition: width 1s ease;"></div>
+                    <div class="progress-bar-container">
+                        <div id="ram-bar-{{ host.id }}" class="progress-bar" style="width: 0%; background: #a855f7;"></div>
                     </div>
                 </div>
                 <!-- Disk -->
@@ -54,14 +58,17 @@
                         <span style="color: var(--text-muted);">Disk usage</span>
                         <span id="disk-val-{{ host.id }}" style="font-weight: 600;">--%</span>
                     </div>
-                    <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
-                        <div id="disk-bar-{{ host.id }}" style="width: 0%; height: 100%; background: #fbbf24; transition: width 1s ease;"></div>
+                    <div class="progress-bar-container">
+                        <div id="disk-bar-{{ host.id }}" class="progress-bar" style="width: 0%; background: #fbbf24;"></div>
                     </div>
                 </div>
             </div>
             
             <div style="display: flex; gap: 8px;">
                 <a href="/connect/{{ host.id }}" class="btn btn-primary" style="flex: 1; font-size: 0.85rem; padding: 8px;">접속하기</a>
+                <button id="monitor-btn-{{ host.id }}" class="btn btn-outline" style="padding: 8px 12px;" onclick="toggleMonitoring({{ host.id }})" title="모니터링 토글">
+                    <span id="monitor-icon-{{ host.id }}">👁️</span>
+                </button>
                 <button class="btn btn-outline" style="padding: 8px 12px;" onclick="deleteHost({{ host.id }}, '{{ host.name }}')">🗑️</button>
             </div>
         </div>
@@ -127,93 +134,10 @@
     </div>
 </div>
 
+<!-- Socket.io -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-    async function deleteHost(id, name) {
-        if (!confirm(`'${name}' 호스트를 삭제하시겠습니까?`)) return;
-
-        try {
-            const response = await fetch(`/host/delete/${id}`, { method: 'POST' });
-            if (response.ok) {
-                location.reload();
-            } else {
-                alert('삭제 중 오류가 발생했습니다.');
-            }
-        } catch (error) {
-            alert('통신 오류가 발생했습니다.');
-        }
-    }
-
-    document.getElementById('addHostForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const btn = document.getElementById('saveHostBtn');
-        const originalText = btn.innerText;
-        btn.innerText = '📡 연결 테스트 중...';
-        btn.disabled = true;
-
-        const formData = new FormData(this);
-        try {
-            const response = await fetch('/host/add', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                alert('✅ ' + data.message);
-                location.reload();
-            } else {
-                alert('❌ ' + (data.error || '알 수 없는 오류가 발생했습니다.'));
-            }
-        } catch (error) {
-            alert('❌ 서버와 통신 중 오류가 발생했습니다.');
-        } finally {
-            btn.innerText = originalText;
-            btn.disabled = false;
-        }
-    });
-
-    const socket = io();
-
-    // 초기 활성 세션 상태 설정
-    const activeHosts = {{ active_hosts | tojson }};
-    activeHosts.forEach(id => {
-        updateStatus(id, 'online');
-    });
-
-    socket.on('server_stats', function(data) {
-        const id = data.host_id;
-        const stats = data.stats;
-        
-        updateStatus(id, 'online');
-        
-        // CPU 업데이트
-        const cpuVal = document.getElementById(`cpu-val-${id}`);
-        const cpuBar = document.getElementById(`cpu-bar-${id}`);
-        if (cpuVal && cpuBar) {
-            cpuVal.innerText = stats.cpu + '%';
-            cpuBar.style.width = stats.cpu + '%';
-            // 임계치에 따른 색상 변경
-            cpuBar.style.background = stats.cpu > 80 ? '#ef4444' : (stats.cpu > 50 ? '#f59e0b' : '#38bdf8');
-        }
-        
-        // RAM 업데이트
-        const ramVal = document.getElementById(`ram-val-${id}`);
-        const ramBar = document.getElementById(`ram-bar-${id}`);
-        if (ramVal && ramBar) {
-            ramVal.innerText = stats.ram + '%';
-            ramBar.style.width = stats.ram + '%';
-            ramBar.style.background = stats.ram > 90 ? '#ef4444' : '#a855f7';
-        }
-        
-        // Disk 업데이트
-        const diskVal = document.getElementById(`disk-val-${id}`);
-        const diskBar = document.getElementById(`disk-bar-${id}`);
-        if (diskVal && diskBar) {
-            diskVal.innerText = stats.disk + '%';
-            diskBar.style.width = stats.disk + '%';
-        }
-    });
-
-    // updateStatus, toggleAuthFields는 static/js/main.js로 이동됨
+    window.ACTIVE_HOSTS = {{ active_hosts | tojson }};
 </script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

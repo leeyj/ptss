@@ -48,14 +48,14 @@ PTSS(Premium Terminal & SFTP System)는 웹 기반의 SSH 클라이언트 및 �
 - **Asynchronous**: Eventlet
 
 ### 3.2 주요 모듈 및 함수
-- **`SSHManager` (`ssh_manager.py`)**:
-    - `connect(...)`: SSH 접속 수립 및 인증 처리
-    - `get_shell()`: 터미널 셸 채널 생성
-- **`ptss.py`**:
-    - `handle_terminal_connect()`: 영구 세션(Persistence) 구축 및 백로그 복구
-    - `shell_to_socket()`: 백그라운드에서 셸 출력을 읽어 소켓 전송 및 백로그 큐 저장
-- **`state.py`**:
-    - 서버 측 세션 객체, 백로그(`deque`), SID 매핑 등 전역 상태 관리
+- **`core/` (핵심 패키지)**:
+    - **`SSHManager` (`core/ssh_manager.py`)**: SSH 접속 수립 및 인증 처리, 셸 채널 생성 담당
+    - **`core/models.py`**: 데이터베이스 스키마 정의 (User, Host, History, Config 등)
+    - **`core/database.py`**: SQLAlchemy 인스턴스 (`db`) 관리
+    - **`core/crypto.py`**: AES-256 데이터 암호화/복호화 유틸리티
+    - **`core/state.py`**: SSH 세션, 백로그, 버퍼 등 전역 런타임 상태 관리
+- **`ptss.py`**: 메인 애플리케이션 초기화, 블루프린트 등록, Socket.IO 이벤트 핸들링
+- **`blueprints/`**: 기능별 라우트 분리 (Auth, Admin, Terminal, API, History, Scripts)
 
 ## 4. 데이터베이스 스키마 (SQLite)
 
@@ -86,6 +86,23 @@ PTSS(Premium Terminal & SFTP System)는 웹 기반의 SSH 클라이언트 및 �
 - 본 소프트웨어 사용으로 인해 발생하는 데이터 손실, 접속 장애 등의 결과에 대해 개발자는 어떠한 보상 책임도 지지 않습니다.
 
 ## 7. 배포 및 유지보수 도구
-### 7.1 배포 스크립트 (`tools/deploy_ptss.py`)
+
+### 7.1 유지보수 및 테스트 도구 (`/tools` 디렉토리)
+프로젝트 관리 및 테스트를 위한 보조 스크립트들은 `/tools` 디렉토리에 집중 관리됩니다.
+
+- **데이터베이스 관련**:
+    - `init_db.py`: 데이터베이스 초기화 및 테이블 생성
+    - `migrate_db.py`, `migrate_v2.py`: 스키마 변경 시 마이그레이션 수행
+    - `sync_admin.py`: 관리자 계정 상태 동기화 및 점검
+- **검증 및 디버깅**:
+    - `check_users.py`, `debug_users.py`: DB 사용자 목록 및 권한 확인
+    - `debug_host_auth.py`: 호스트 접속 및 인증 과정 디버깅
+    - `check_design.py`: UI 디자인 요소 및 CSS 변수 정합성 검사
+- **테스트 스크립트**:
+    - `test_login.py`: 로그인 기능 및 세션 처리 테스트 
+    - `test_manual_ssh.py`: 수동 SSH 접속 기능 단위 테스트
+    - `test_v2_setup.py`: 초기 설정(Setup) 프로세스 통합 테스트
+
+### 7.2 배포 자동화 (`tools/deploy_ptss.py`)
 - **목적**: 로컬 개발 환경(Windows)에서 홈 서버(Linux)로 프로젝트 최신 코드를 배포하고 서비스를 재시작함.
 - **기능**: SFTP 파일 동기화, 의존성 설치, 기존 프로세스 종료/재시작 자동화.

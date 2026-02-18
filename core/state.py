@@ -10,3 +10,5 @@ sid_to_info = {}  # sid -> (user_id, host_id, tab_id)
 shell_threads = {}  # 하위 호환 매핑용
 sid_to_host = {}  # SID - HostID 매핑
 input_buffers = {}  # 전역 버퍼 관리
+terminal_buffers = {}  # (user_id, host_id, tab_id) -> "current_command_string"
+host_watchers = {}  # host_id -> set(sids) - 모니터링 구독자 관리
