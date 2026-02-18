@@ -243,6 +243,15 @@ def execute_script_remote():
     output = stdout.read().decode("utf-8", errors="ignore")
     error = stderr.read().decode("utf-8", errors="ignore")
 
+    # 히스토리에 기록
+    new_hist = History(
+        host_id=host_id,
+        action_type="SCRIPT",
+        detail=f"Executed script: {script.name}",
+    )
+    db.session.add(new_hist)
+    db.session.commit()
+
     return jsonify({"output": output, "error": error})
 
 

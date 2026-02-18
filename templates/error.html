@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 20px;">
+    <div class="card" style="max-width: 500px; width: 100%; text-align: center; padding: 50px; border-radius: 24px;">
+        <div style="font-size: 4rem; margin-bottom: 20px;">⚠️</div>
+        <h1 style="color: var(--danger); font-size: 2rem; margin-bottom: 15px;">{{ title }}</h1>
+        <p style="color: var(--text-muted); font-size: 1.1rem; line-height: 1.6; margin-bottom: 35px;">
+            {{ message }}
+        </p>
+        
+        <div style="display: flex; gap: 15px; justify-content: center;">
+            <a href="{{ back_url }}" class="btn btn-primary" style="padding: 12px 30px;">다시 시도하기</a>
+            <a href="/" class="btn btn-outline" style="padding: 12px 30px;">대시보드로 이동</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -68,6 +68,12 @@ window.PTSS.Snippet = {
                     data: snippet.command + '\n',
                     tab_id: window.PTSS.Terminal.activeTabId
                 });
+
+                // 히스토리 기록을 위해 terminal_command 이벤트도 별도로 전송
+                window.PTSS.socket.emit('terminal_command', {
+                    command: snippet.command,
+                    tab_id: window.PTSS.Terminal.activeTabId
+                });
             }
         }
     },

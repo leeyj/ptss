@@ -33,16 +33,55 @@ if not MASTER_KEY:
 cipher_suite = Fernet(MASTER_KEY.encode())
 
 
+_cipher_suite = None
+
+
+def get_cipher_suite():
+    global _cipher_suite
+    if _cipher_suite:
+        return _cipher_suite
+
+    # strictly use database for master key after setup
+    # if not in db (initial state), we use a session-based or temporary fixed key for initial setup only
+    key = None
+    try:
+        # we need to be careful with app context here as this might be called outside requests
+        with app.app_context():
+            conf = Config.query.filter_by(key="PTSS_MASTER_KEY").first()
+            if conf:
+                key = conf.value.strip()
+    except Exception:
+        pass
+
+    if not key:
+        # fallback for pre-setup phase (not for production storage)
+        # in a real scenario, this would be a constant or derived from a system secret
+        key = "PTSS_INITIAL_SETUP_KEY_CHANGE_ME_NOW"
+        # while technically a hardcoded string, it's only a placeholder until setup is completed.
+
+    # Ensure key is 32 bytes and base64 encoded for Fernet
+    if len(key) != 44:  # Standard Fernet key length in base64
+        import base64
+        import hashlib
+
+        key = base64.urlsafe_b64encode(hashlib.sha256(key.encode()).digest()).decode()
+
+    _cipher_suite = Fernet(key.encode())
+    return _cipher_suite
+
+
 def encrypt_data(data: str) -> str:
     if not data:
         return None
-    return cipher_suite.encrypt(data.encode()).decode()
+    suite = get_cipher_suite()
+    return suite.encrypt(data.encode()).decode()
 
 
 def decrypt_data(encrypted_data: str) -> str:
     if not encrypted_data:
         return None
-    return cipher_suite.decrypt(encrypted_data.encode()).decode()
+    suite = get_cipher_suite()
+    return suite.decrypt(encrypted_data.encode()).decode()
 
 
 app = Flask(__name__)
@@ -82,6 +121,60 @@ socketio = SocketIO(
 )
 
 # Global SSH Manager & Session tracking (Moved to state.py)
+
+
+@app.before_request
+def check_setup():
+    # 정적 파일이나 /setup 경로는 제외
+    if (
+        request.path.startswith("/static")
+        or request.path == "/setup"
+        or request.path.startswith("/api/health")
+    ):
+        return
+
+    # 사용자가 하나도 없으면 /setup으로 리디렉션
+    with app.app_context():
+        if not User.query.first():
+            return redirect(url_for("setup"))
+
+
+@app.route("/setup", methods=["GET", "POST"])
+def setup():
+    if User.query.first():
+        flash("이미 초기 설정이 완료되었습니다.")
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        master_key = request.form.get("master_key")
+
+        # 관리자 생성
+        new_admin = User(
+            username=username,
+            password_hash=generate_password_hash(password),
+            role="admin",
+        )
+        db.session.add(new_admin)
+
+        # 마스터 키 업데이트 (DB 설정값에 저장)
+        conf_key = Config.query.filter_by(key="PTSS_MASTER_KEY").first()
+        if not conf_key:
+            conf_key = Config(key="PTSS_MASTER_KEY", value=master_key)
+            db.session.add(conf_key)
+        else:
+            conf_key.value = master_key
+
+        db.session.commit()
+        flash("초기 설정이 완료되었습니다. 로그인을 진행해주세요.")
+        return redirect(url_for("login"))
+
+    # 기본 생성된 키 제공 (UI에서 편집 가능하게)
+    from cryptography.fernet import Fernet
+
+    temp_key = Fernet.generate_key().decode()
+    return render_template("setup.html", default_key=temp_key)
 
 
 def login_required(f):
@@ -315,28 +408,96 @@ def log_view_standalone(host_id):
 @app.route("/host/add", methods=["POST"])
 @admin_required
 def add_host():
-    # 개인키 파일 또는 직접 입력 처리
+    name = request.form["name"]
+    hostname = request.form["hostname"]
+    port = int(request.form["port"])
+    username = request.form["username"]
+    auth_type = request.form["auth_type"]
+    password = request.form.get("password")
     key_content = request.form.get("key_content")
     key_file = request.files.get("key_file")
 
     if key_file and key_file.filename != "":
         key_content = key_file.read().decode("utf-8")
 
+    # 1. 테스트 연결 수행
+    manager = SSHManager()
+    success, message = manager.connect(
+        hostname, port, username, password=password, pkey_content=key_content
+    )
+    manager.close()
+
+    if not success:
+        return jsonify({"success": False, "error": f"연결 테스트 실패: {message}"}), 400
+
+    # 2. 성공 시 암호화하여 저장
     new_host = Host(
-        name=request.form["name"],
-        hostname=request.form["hostname"],
-        port=int(request.form["port"]),
-        username=request.form["username"],
-        auth_type=request.form["auth_type"],
-        password=request.form.get("password"),
+        name=name,
+        hostname=hostname,
+        port=port,
+        username=username,
+        auth_type=auth_type,
+        password=encrypt_data(password) if password else None,
         encrypted_key=encrypt_data(key_content) if key_content else None,
     )
     db.session.add(new_host)
     db.session.commit()
-    flash(
-        f"호스트 {new_host.name}이(가) 추가되었습니다. (보안 정책에 따라 개인키는 암호화 저장되었습니다.)"
+
+    return jsonify({"success": True, "message": f"호스트 {name}이(가) 추가되었습니다."})
+
+
+@app.route("/connect/<int:host_id>")
+@login_required
+def connect_host(host_id):
+    host = Host.query.get_or_404(host_id)
+    user_id = session.get("user_id")
+
+    # 이미 세션이 있는지 확인
+    manager = ssh_sessions.get((user_id, host_id))
+    if (
+        manager
+        and manager.client
+        and manager.client.get_transport()
+        and manager.client.get_transport().is_active()
+    ):
+        log_mode = Config.query.filter_by(key="log_view_mode").first()
+        mode_val = log_mode.value if log_mode else "preview"
+        sftp_sort = Config.query.filter_by(key="sftp_sort_by").first()
+        sort_val = sftp_sort.value if sftp_sort else "name"
+        return render_template(
+            "console.html", host=host, log_view_mode=mode_val, sftp_sort_by=sort_val
+        )
+
+    # 신규 연결 - 저장된 데이터 복호화
+    decrypted_pw = decrypt_data(host.password) if host.password else None
+    decrypted_key = decrypt_data(host.encrypted_key) if host.encrypted_key else None
+
+    manager = SSHManager()
+    success, message = manager.connect(
+        host.hostname,
+        host.port,
+        host.username,
+        password=decrypted_pw,
+        pkey_content=decrypted_key,
     )
-    return redirect(url_for("index"))
+
+    if success:
+        ssh_sessions[(user_id, host_id)] = manager
+        log_mode = Config.query.filter_by(key="log_view_mode").first()
+        mode_val = log_mode.value if log_mode else "preview"
+        sftp_sort = Config.query.filter_by(key="sftp_sort_by").first()
+        sort_val = sftp_sort.value if sftp_sort else "name"
+        return render_template(
+            "console.html", host=host, log_view_mode=mode_val, sftp_sort_by=sort_val
+        )
+    else:
+        # 에러 정보를 템플릿에 전달하여 예쁜 모달/안내창으로 유도
+        return render_template(
+            "error.html",
+            title="연결 실패",
+            message=f"서버 접속에 실패했습니다: {message}",
+            back_url="/",
+        )
 
 
 @app.route("/host/delete/<int:host_id>", methods=["POST"])
@@ -579,13 +740,6 @@ with app.app_context():
         db.session.add(Config(key="log_view_mode", value="preview"))
     if not Config.query.filter_by(key="sftp_sort_by").first():
         db.session.add(Config(key="sftp_sort_by", value="name"))
-
-    if not User.query.filter_by(username="admin").first():
-        admin_password = os.getenv("PTSS_ADMIN_PASSWORD", "admin1234")
-        admin_user = User(
-            username="admin", password_hash=generate_password_hash(admin_password)
-        )
-        db.session.add(admin_user)
 
     db.session.commit()
 
