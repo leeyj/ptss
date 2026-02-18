@@ -327,7 +327,7 @@ def handle_terminal_connect(data):
     sid_to_host[sid] = host_id
     session_key = (user_id, host_id, tab_id)
     active_sids[session_key] = sid
-    sid_to_info[sid] = session_key
+    sid_to_info[sid] = (user_id, host_id, tab_id)  # 튜플 보관
 
     manager = ssh_sessions.get((user_id, host_id))
     if not manager:
@@ -401,9 +401,16 @@ def handle_terminal_connect(data):
 def handle_terminal_input(data):
     sid = request.sid
     tab_id = data.get("tab_id", "default")
-    user_id = session.get("user_id")
-    host_id = sid_to_host.get(sid)
-    if not host_id:
+
+    # sid_to_info에서 우선적으로 정보를 가져옴
+    s_info = sid_to_info.get(sid)
+    if s_info:
+        user_id, host_id, _ = s_info
+    else:
+        user_id = session.get("user_id")
+        host_id = sid_to_host.get(sid)
+
+    if not user_id or not host_id:
         return
 
     session_key = (user_id, host_id, tab_id)
@@ -479,17 +486,26 @@ def handle_terminal_command(data):
 @socketio.on("terminal_resize")
 def handle_terminal_resize(data):
     sid = request.sid
-    host_id = sid_to_host.get(sid)
-    user_id = session.get("user_id")
     tab_id = data.get("tab_id", "default")
 
-    if host_id:
-        manager = ssh_sessions.get((user_id, host_id))
-        if manager:
-            session_key = (user_id, host_id, tab_id)
-            shell = active_shells.get(session_key)
-            if shell:
-                shell.resize_pty(cols=data.get("cols", 80), rows=data.get("rows", 24))
+    s_info = sid_to_info.get(sid)
+    if s_info:
+        user_id, host_id, _ = s_info
+    else:
+        user_id = session.get("user_id")
+        host_id = sid_to_host.get(sid)
+
+    if host_id and user_id:
+        session_key = (user_id, host_id, tab_id)
+        shell = active_shells.get(session_key)
+        if shell:
+            try:
+                # Paramiko의 resize_pty는 width, height 인자를 사용함
+                shell.resize_pty(
+                    width=int(data.get("cols", 80)), height=int(data.get("rows", 24))
+                )
+            except Exception as e:
+                print(f"PTY Resize Error: {e}")
 
 
 with app.app_context():

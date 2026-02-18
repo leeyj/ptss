@@ -29,7 +29,8 @@
         </div>
     </div>
 
-    <!-- 통계 요약 카드 -->
+    <!-- 통계 요약 카드 (관리자 전용) -->
+    {% if session.role == 'admin' %}
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
         <div style="background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.1); padding: 20px; border-radius: 16px; text-align: center;">
             <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;">최다 활동 사용자</div>
@@ -44,21 +45,26 @@
             <div style="font-size: 1.25rem; font-weight: 700; color: #fbbf24;">⚡ {{ stats_summary.top_action }}</div>
         </div>
     </div>
+    {% endif %}
 
     <!-- 필터 영역 -->
     <div style="background: rgba(30, 41, 59, 0.3); padding: 20px; border-radius: 16px; margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; border: 1px solid rgba(255,255,255,0.05);">
+        {% if session.role == 'admin' %}
         <div style="flex: 1; min-width: 200px;">
             <label style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase;">사용자</label>
-            <select id="userFilter" class="premium-select" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px;">
+            <select id="userFilter" class="premium-select" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; height: 42px; box-sizing: border-box;">
                 <option value="">모든 사용자</option>
                 {% for u in all_users %}
                 <option value="{{ u.id }}" {% if filters.user_id == u.id %}selected{% endif %}>{{ u.username }}</option>
                 {% endfor %}
             </select>
         </div>
+        {% else %}
+        <input type="hidden" id="userFilter" value="{{ session.user_id }}">
+        {% endif %}
         <div style="flex: 1; min-width: 200px;">
             <label style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase;">호스트</label>
-            <select id="hostFilter" class="premium-select" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px;">
+            <select id="hostFilter" class="premium-select" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; height: 42px; box-sizing: border-box;">
                 <option value="">모든 호스트</option>
                 {% for h in all_hosts %}
                 <option value="{{ h.id }}" {% if filters.host_id == h.id %}selected{% endif %}>{{ h.name }}</option>
@@ -67,7 +73,7 @@
         </div>
         <div style="flex: 1; min-width: 150px;">
             <label style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase;">활동 유형</label>
-            <select id="actionFilter" class="premium-select" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px;">
+            <select id="actionFilter" class="premium-select" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; height: 42px; box-sizing: border-box;">
                 <option value="">모든 활동</option>
                 {% for at in action_types %}
                 <option value="{{ at }}" {% if filters.action_type == at %}selected{% endif %}>{{ at }}</option>
@@ -77,8 +83,8 @@
         <div style="flex: 2; min-width: 250px;">
             <label style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase;">검색어</label>
             <div style="display: flex; gap: 10px;">
-                <input type="text" id="searchInput" value="{{ filters.q or '' }}" placeholder="명령어 또는 상세 내용 검색..." style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; color: white; padding: 8px 12px; font-size: 0.9rem; outline: none;">
-                <button onclick="applyFilters()" class="btn btn-primary" style="padding: 8px 20px;">검색</button>
+                <input type="text" id="searchInput" value="{{ filters.q or '' }}" placeholder="명령어 또는 상세 내용 검색..." style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; color: white; padding: 0 12px; font-size: 0.9rem; outline: none; height: 42px; box-sizing: border-box;">
+                <button onclick="applyFilters()" class="btn btn-primary" style="padding: 0 20px; height: 42px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; border-radius: 8px;">검색</button>
             </div>
         </div>
     </div>
@@ -179,7 +185,7 @@
         </div>
         <div class="pagination-controls">
             {% if pagination.has_prev %}
-            <a href="{{ url_for('view_history', page=pagination.prev_num, per_page=per_page, user_id=filters.user_id, host_id=filters.host_id, action_type=filters.action_type, q=filters.q) }}" class="page-btn">
+            <a href="{{ url_for('history.view_history', page=pagination.prev_num, per_page=per_page, user_id=filters.user_id, host_id=filters.host_id, action_type=filters.action_type, q=filters.q) }}" class="page-btn">
                 <span style="transform: rotate(180deg); display: inline-block;">➔</span> Previous
             </a>
             {% else %}
@@ -194,7 +200,7 @@
                         {% if p == pagination.page %}
                         <span class="page-num active">{{ p }}</span>
                         {% else %}
-                        <a href="{{ url_for('view_history', page=p, per_page=per_page, user_id=filters.user_id, host_id=filters.host_id, action_type=filters.action_type, q=filters.q) }}" class="page-num">{{ p }}</a>
+                        <a href="{{ url_for('history.view_history', page=p, per_page=per_page, user_id=filters.user_id, host_id=filters.host_id, action_type=filters.action_type, q=filters.q) }}" class="page-num">{{ p }}</a>
                         {% endif %}
                     {% else %}
                     <span class="page-num dots">...</span>
@@ -203,7 +209,7 @@
             </div>
 
             {% if pagination.has_next %}
-            <a href="{{ url_for('view_history', page=pagination.next_num, per_page=per_page, user_id=filters.user_id, host_id=filters.host_id, action_type=filters.action_type, q=filters.q) }}" class="page-btn">
+            <a href="{{ url_for('history.view_history', page=pagination.next_num, per_page=per_page, user_id=filters.user_id, host_id=filters.host_id, action_type=filters.action_type, q=filters.q) }}" class="page-btn">
                 Next <span>➔</span>
             </a>
             {% else %}

@@ -97,19 +97,24 @@ window.PTSS.Terminal = {
 
         // **중요: ResizeObserver 적용**
         // 컨테이너 크기가 변하거나 display가 block으로 바뀔 때 자동으로 fit 수행
+        let resizeTimeout;
         const resizeObserver = new ResizeObserver(() => {
             try {
                 if (termContainer.clientWidth > 0 && termContainer.clientHeight > 0) {
                     fitAddon.fit();
-                    // 소켓으로 리사이즈 이벤트 전송 (debounce 필요할 수 있음)
-                    // 여기서는 간단히 직접 호출하되, 너무 잦은 호출 방지 로직은 생략
-                    if (this.activeTabId === tabId) {
-                        window.PTSS.socket.emit('terminal_resize', {
-                            cols: term.cols,
-                            rows: term.rows,
-                            tab_id: tabId
-                        });
-                    }
+
+                    // 소켓으로 리사이즈 이벤트 전송 (디바운스 적용)
+                    if (resizeTimeout) clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        if (this.activeTabId === tabId) {
+                            console.log(`[PTSS] Terminal Resized: ${term.cols}x${term.rows}`);
+                            window.PTSS.socket.emit('terminal_resize', {
+                                cols: term.cols,
+                                rows: term.rows,
+                                tab_id: tabId
+                            });
+                        }
+                    }, 200);
                 }
             } catch (e) { console.warn('Resize Error:', e); }
         });

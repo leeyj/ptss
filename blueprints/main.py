@@ -69,9 +69,13 @@ def view_settings():
     keepalive = Config.query.filter_by(key="ssh_keepalive_interval").first()
     ka_val = keepalive.value if keepalive else "0"
 
+    retention = Config.query.filter_by(key="session_retention").first()
+    ret_val = retention.value if retention else "maintain"
+
     return render_template(
         "settings.html",
         log_view_mode=mode_val,
         sftp_sort_by=sort_val,
         ssh_keepalive_interval=ka_val,
+        session_retention=ret_val,
     )

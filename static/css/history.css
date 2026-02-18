@@ -130,7 +130,8 @@
 .history-table {
     width: 100%;
     border-collapse: separate;
-    border-spacing: 0 10px;
+    border-spacing: 0 4px;
+    /* 간격 대폭 축소 */
     text-align: left;
 }
 
@@ -157,9 +158,10 @@
 }
 
 .history-td {
-    padding: 18px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 8px 12px;
+    /* 패딩 대폭 축소 */
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 .history-td:first-child {
@@ -191,10 +193,11 @@
 .action-badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
+    gap: 4px;
+    padding: 3px 10px;
+    /* 배지 크기 축소 */
     border-radius: 30px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
     white-space: nowrap;
 }
@@ -242,22 +245,22 @@
 }
 
 .detail-container {
-    max-width: 400px;
-    overflow: hidden;
+    max-width: 800px;
 }
 
 .detail-code {
     background: rgba(0, 0, 0, 0.3);
-    padding: 6px 12px;
-    border-radius: 8px;
+    padding: 4px 10px;
+    /* 패딩 축소 */
+    border-radius: 6px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+    /* 폰트 살짝 축소 */
     color: #e2e8f0;
     border: 1px solid rgba(255, 255, 255, 0.05);
     display: inline-block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: pre-wrap;
+    word-break: break-all;
     max-width: 100%;
     transition: all 0.2s;
 }

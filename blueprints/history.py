@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request  # type: ignore
+from flask import Blueprint, render_template, request, session  # type: ignore
 from core.database import db  # type: ignore
 from core.models import History, User, Host  # type: ignore
 from core.decorators import login_required  # type: ignore
@@ -11,6 +11,8 @@ bp = Blueprint("history", __name__)
 def view_history():
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
+    current_user_id = session.get("user_id")
+    current_role = session.get("role")
 
     # 필터 파라미터
     user_id = request.args.get("user_id", type=int)
@@ -20,8 +22,13 @@ def view_history():
 
     query = History.query
 
-    if user_id:
+    # 권한 체크: 일반 사용자는 본인 데이터만, 관리자는 전체 데이터 조회 가능
+    if current_role != "admin":
+        query = query.filter(History.user_id == current_user_id)
+        user_id = current_user_id  # 필터 값 고정
+    elif user_id:
         query = query.filter(History.user_id == user_id)
+
     if host_id:
         query = query.filter(History.host_id == host_id)
     if action_type:
@@ -34,8 +41,12 @@ def view_history():
     )
     histories = pagination.items
 
-    # 필터용 데이터
-    all_users = User.query.all()
+    # 필터용 데이터 (관리자는 전체 목록, 유저는 본인만)
+    if current_role == "admin":
+        all_users = User.query.all()
+    else:
+        all_users = User.query.filter_by(id=current_user_id).all()
+
     all_hosts = Host.query.all()
     # 고유한 활동 유형 목록 추출
     action_types = db.session.query(History.action_type).distinct().all()

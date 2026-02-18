@@ -6,10 +6,10 @@
 
 .console-container {
     display: flex;
-    height: 500px;
-    /* 기본 높이 */
+    height: calc(100vh - 350px);
+    /* 창 크기에 따라 유동적으로 조절 */
+    min-height: 300px;
     gap: 20px;
-    min-height: 200px;
 }
 
 .terminal-instance {
@@ -360,11 +360,17 @@ body.popup-mode .session-tab-bar {
 }
 
 .modal-footer {
-    padding: 20px;
+    padding: 16px 20px;
     border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: flex-end;
-    background: rgba(0, 0, 0, 0.1);
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.modal-footer .btn {
+    padding: 8px 18px;
+    font-size: 0.9rem;
 }
 
 /* Snippet Panel & Items */
