@@ -61,11 +61,11 @@ db_url = os.getenv("DATABASE_URL")
 if not db_url:
     # .env가 없거나 값이 비어있을 경우 기본값 사용
     db_url = "sqlite:///" + os.path.join(basedir, "ptss.db")
-elif db_url.startswith("sqlite:///"):
-    # 상대경로 처리를 위해 sqlite:/// 뒤에 basedir을 결합 (선택 사항이나 안전을 위해)
-    # 다만 .env에 "sqlite:///ptss.db" 라고 적혀있으면 그대로 둬도 됨 (상대경로 인식함)
-    # 하지만 절대경로 변환을 원하면 파싱해야 함. 여기서는 단순하게 처리.
-    pass
+elif db_url.startswith("sqlite:///") and not db_url.startswith("sqlite:////"):
+    # sqlite:/// (슬래시 3개)로 시작하면서 절대경로(/)가 아닌 경우 basedir 결합
+    db_path = db_url.replace("sqlite:///", "")
+    if not os.path.isabs(db_path):
+        db_url = "sqlite:///" + os.path.join(basedir, db_path)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
