@@ -11,7 +11,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    {% if session.user_id %}
+    {% if session.user_id and request.path != '/setup' %}
     <div class="sidebar" style="position: relative; z-index: 100;">
         <div class="sidebar-header">
             <span>⚡ PTSS</span>
