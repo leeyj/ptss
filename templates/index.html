@@ -23,11 +23,11 @@
         {% for host in hosts %}
         <div class="host-card" id="host-card-{{ host.id }}">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
-                <div>
-                    <h3 style="margin: 0; font-size: 1.1rem; color: white;">{{ host.name }}</h3>
-                    <p style="margin: 5px 0 0; font-size: 0.8rem; color: var(--text-muted);">{{ host.username }}@{{ host.hostname }}</p>
+                <div style="flex: 1; min-width: 0; margin-right: 10px;">
+                    <h3 style="margin: 0; font-size: 1.1rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ host.name }}">{{ host.name }}</h3>
+                    <p style="margin: 5px 0 0; font-size: 0.8rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ host.username }}@{{ host.hostname }}">{{ host.username }}@{{ host.hostname }}</p>
                 </div>
-                <div id="status-{{ host.id }}" class="status-badge offline">Offline</div>
+                <div id="status-{{ host.id }}" class="status-badge offline" style="flex-shrink: 0;">Offline</div>
             </div>
             
             <!-- 모니터링 지표 -->
