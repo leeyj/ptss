@@ -23,7 +23,9 @@ def setup():
         import os
         from dotenv import set_key
 
-        env_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), ".env")
+        env_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"
+        )
         if not os.path.exists(env_path):
             with open(env_path, "w") as f:
                 f.write(f"DATABASE_URL=sqlite:///ptss.db\n")
