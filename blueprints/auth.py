@@ -18,7 +18,27 @@ def setup():
         password = request.form.get("password")
         master_key = request.form.get("master_key")
 
-        # 관리자 생성
+        # 1. .env 파일 자동 생성/업데이트 (세션 키 고정)
+        import secrets
+        import os
+        from dotenv import set_key
+
+        env_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), ".env")
+        if not os.path.exists(env_path):
+            with open(env_path, "w") as f:
+                f.write(f"DATABASE_URL=sqlite:///ptss.db\n")
+
+        # 무작위 SECRET_KEY 생성 및 저장 (이미 있으면 유지)
+        current_secret = os.getenv("PTSS_SECRET_KEY")
+        if not current_secret:
+            new_secret = secrets.token_urlsafe(32)
+            set_key(env_path, "PTSS_SECRET_KEY", new_secret)
+            # 현재 런타임 세션에도 즉시 반영
+            from flask import current_app
+
+            current_app.config["SECRET_KEY"] = new_secret
+
+        # 2. 관리자 생성
         new_admin = User(
             username=username,
             password_hash=generate_password_hash(password),
@@ -27,7 +47,7 @@ def setup():
         )
         db.session.add(new_admin)
 
-        # 마스터 키 업데이트 (DB 설정값에 저장)
+        # 3. 마스터 키 업데이트 (DB 설정값에 저장)
         conf_key = Config.query.filter_by(key="PTSS_MASTER_KEY").first()
         if not conf_key:
             conf_key = Config(key="PTSS_MASTER_KEY", value=master_key)
@@ -36,7 +56,7 @@ def setup():
             conf_key.value = master_key
 
         db.session.commit()
-        flash("초기 설정이 완료되었습니다. 로그인을 진행해주세요.")
+        flash("초기 설정 및 .env 보안 키 생성이 완료되었습니다. 로그인을 진행해주세요.")
         return redirect(url_for("auth.login"))
 
     # 기본 생성된 키 제공 (UI에서 편집 가능하게)
