@@ -228,13 +228,27 @@ def handle_disconnect_socket():
     # 2. Terminal Session Cleanup
     session_key = sid_to_info.pop(sid, None)
     if session_key:
+        user_id, host_id, tab_id = session_key  # 언패킹
         active_sids.pop(session_key, None)
         with app.app_context():
             retention = Config.query.filter_by(key="session_retention").first()
             if retention and retention.value == "terminate":
+                # 1) 실시간 셸 정보 제거
                 shell = active_shells.pop(session_key, None)
                 if shell:
                     print(f"[Policy] Terminating shell for {session_key}")
+
+                # 2) 핵심: SSH 매니저 자체를 종료 및 제거
+                # 같은 호스트에 다른 탭이 열려있더라도 공공기관형에서는 보안을 위해 전체 세션을 종료합니다.
+                manager = ssh_sessions.pop((user_id, host_id), None)
+                if manager:
+                    print(
+                        f"[Policy] Closing SSH session for user {user_id}, host {host_id}"
+                    )
+                    try:
+                        manager.close()
+                    except:
+                        pass
 
 
 @socketio.on("start_monitoring")

@@ -57,24 +57,31 @@ PTSS는 Python Flask와 Socket.IO를 이용한 비동기 서버와 클라이언�
 │ username      │              │ name                      │
 │ password_hash │              │ hostname                  │
 │ role          │              │ port                      │
-└───────────────┘              │ username                  │
-                               │ auth_type                 │
-┌───────────────┐              │ password                  │
-│    Script     │              │ encrypted_key             │
-├───────────────┤              │ created_at                │
-│ id (PK)       │              └─────┬─────────────────────┘
-│ name          │                    │ 1
-│ content       │                    │
-│ created_at    │                    │
-└───────────────┘                    │ N (has logs)
-                               ┌─────▼─────────────────────┐
-┌───────────────┐              │         History           │
-│    Snippet    │              ├───────────────────────────┤
-├───────────────┤              │ id (PK)                   │
-│ id (PK)       │              │ host_id (FK)              │
-│ category      │              │ action_type               │
-│ name          │              │ detail                    │
-│ command       │              │ extra_info                │
-│ created_at    │              │ timestamp                 │
-└───────────────┘              └───────────────────────────┘
+└─────┬─────────┘              │ username                  │
+      │ 1                      │ auth_type                 │
+      │                        │ password                  │
+      │ N (has histories)      │ encrypted_key             │
+      │                        │ created_at                │
+┌─────▼─────────────────────┐  └─────┬─────────────────────┘
+│         History           │        │ 1
+├───────────────────────────┤        │
+│ id (PK)                   │        │
+│ host_id (FK)              │◄───────┘ N (logs per host)
+│ user_id (FK)              │
+│ action_type               │        ┌───────────────────────────┐
+│ detail                    │        │          Config           │
+│ extra_info                │        ├───────────────────────────┤
+│ timestamp                 │        │ id (PK)                   │
+└───────────────────────────┘        │ key (unique)              │
+                                     │ value                     │
+┌───────────────┐                    └───────────────────────────┘
+│    Snippet    │              
+├───────────────┤              ┌───────────────────────────┐
+│ id (PK)       │              │          Script           │
+│ category      │              ├───────────────────────────┤
+│ name          │              │ id (PK)                   │
+│ command       │              │ name                      │
+│ created_at    │              │ content                   │
+└───────────────┘              │ created_at                │
+                               └───────────────────────────┘
 ```
