@@ -68,9 +68,6 @@ DATABASE_URL=sqlite:///ptss.db
 # Flask 세션 보호용 비밀키 (임의의 긴 문자열 사용 권장)
 # 이 값이 유출되거나 변경되면 모든 로그인 세션이 만료됩니다.
 PTSS_SECRET_KEY=ptss_your_unique_secret_key_string
-
-# [배포용 전용] 홈 서버 배포 시 사용하는 원격 접속 암호
-PTSS_REMOTE_PASSWORD=your_remote_server_password
 ```
 
 ---
