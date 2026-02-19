@@ -277,7 +277,8 @@ def delete_script(script_id):
 
 @bp.route("/disconnect/<int:host_id>", methods=["POST"])
 def disconnect_host(host_id):
-    manager = ssh_sessions.pop(host_id, None)
+    user_id = session.get("user_id")
+    manager = ssh_sessions.pop((user_id, host_id), None)
     if manager:
         manager.close()
 

@@ -69,7 +69,7 @@ elif db_url.startswith("sqlite:///") and not db_url.startswith("sqlite:////"):
 
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SECRET_KEY"] = os.urandom(24)
+app.config["SECRET_KEY"] = os.getenv("PTSS_SECRET_KEY", os.urandom(24))
 app.config["UPLOAD_FOLDER"] = "uploads"
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
@@ -226,29 +226,33 @@ def handle_disconnect_socket():
                 del host_watchers[host_id]
 
     # 2. Terminal Session Cleanup
-    session_key = sid_to_info.pop(sid, None)
-    if session_key:
-        user_id, host_id, tab_id = session_key  # 언패킹
+    s_info = sid_to_info.pop(sid, None)
+    if s_info:
+        user_id, host_id, tab_id = s_info
+        session_key = (user_id, host_id, tab_id)
         active_sids.pop(session_key, None)
+        active_shells.pop(session_key, None)
+
         with app.app_context():
             retention = Config.query.filter_by(key="session_retention").first()
             if retention and retention.value == "terminate":
-                # 1) 실시간 셸 정보 제거
-                shell = active_shells.pop(session_key, None)
-                if shell:
-                    print(f"[Policy] Terminating shell for {session_key}")
+                # 현재 사용자의 해당 호스트에 대해 다른 활성 탭이 있는지 확인
+                still_has_tabs = any(
+                    k[0] == user_id and k[1] == host_id for k in active_sids.keys()
+                )
 
-                # 2) 핵심: SSH 매니저 자체를 종료 및 제거
-                # 같은 호스트에 다른 탭이 열려있더라도 공공기관형에서는 보안을 위해 전체 세션을 종료합니다.
-                manager = ssh_sessions.pop((user_id, host_id), None)
-                if manager:
-                    print(
-                        f"[Policy] Closing SSH session for user {user_id}, host {host_id}"
-                    )
-                    try:
-                        manager.close()
-                    except:
-                        pass
+                if not still_has_tabs:
+                    manager = ssh_sessions.pop((user_id, host_id), None)
+                    if manager:
+                        print(
+                            f"[Policy] Closing SSH session for user {user_id}, host {host_id} (No more tabs)"
+                        )
+                        try:
+                            manager.close()
+                        except Exception as e:
+                            print(f"[Policy Error] Manager close fail: {e}")
+                else:
+                    print(f"[Policy] SSH session maintained (Remaining tabs exist)")
 
 
 @socketio.on("start_monitoring")

@@ -29,21 +29,18 @@
 
 ## 🛠️ 설치 및 실행 (Setup & Run)
 
-### 1. 환경 설정
-Python 3.12 이상이 필요합니다.
+### 2. 초기 설정 (Setup)
+애플리케이션 실행 전, 루트 디렉토리에 `.env` 파일을 생성하고 필수 보안 키를 설정해야 합니다.
 
-```bash
-git clone https://github.com/your-username/ptss.git
-cd ptss
-pip install -r requirements.txt
+```env
+# .env 파일 예시
+PTSS_SECRET_KEY=your_unique_session_key  # 세션 유지용 (필수)
+DATABASE_URL=sqlite:///ptss.db           # DB 경로 (선택)
 ```
 
-### 2. 초기 설정 (Setup)
-애플리케이션을 처음 실행하면 `/setup` 페이지로 자동 리디렉션됩니다. 여기서 다음 설정을 진행하세요:
+이후 애플리케이션을 실행하면 `/setup` 페이지로 자동 리디렉션되어 다음 설정을 진행합니다:
 *   **관리자 계정**: 시스템 로그인을 위한 ID/PW 생성.
-*   **마스터 키**: SSH 키 및 비밀번호 암호화에 사용될 보안 키 설정 (자동 생성된 키 사용 권장).
-*   설정된 값들은 데이터베이스에 안전하게 보관되며, 이후 로그인 시 사용됩니다.
-*   암호화 방식 (AES-256)
+*   **마스터 키**: SSH 접속 정보 암호화용 키 설정 (DB에 저장됨).
 
 ### 3. 시작하기(테스트)
 ```bash
