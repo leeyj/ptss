@@ -1,0 +1,7 @@
+# Git Push Policy
+- **Approval Required**: Do not push to GitHub without explicit user approval. Always ask for permission before pushing.
+- **Privacy Check Required**: This project is public. Before committing or pushing to Git, unconditionally scan and verify that no personal information, secrets, or sensitive credentials are included, and explicitly request user approval before proceeding.
+
+# Code Management Policy
+- **Debug & Test Code**: All debug and test purpose code must be created in the `/tools` directory.
+- **Documentation**: If debug/test code is to be maintained, its purpose and usage must be documented in the project documentation.
