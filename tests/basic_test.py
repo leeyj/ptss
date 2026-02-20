@@ -35,8 +35,12 @@ class BasicSystemTest(unittest.TestCase):
 
     def test_02_login(self):
         """Attempt to login with default admin credentials."""
+        import os
+
+        # 하드코딩된 비밀번호 대신 환경 변수를 사용하도록 수정
+        test_password = os.getenv("TEST_ADMIN_PASSWORD", "your_test_password")
         data = urllib.parse.urlencode(
-            {"username": "admin", "password": "***REMOVED***"}
+            {"username": "admin", "password": test_password}
         ).encode()
 
         req = urllib.request.Request(self.LOGIN_URL, data=data, method="POST")
