@@ -52,7 +52,12 @@ from blueprints.history import bp as history_bp  # type: ignore
 from blueprints.terminal import bp as terminal_bp  # type: ignore
 from blueprints.scripts import bp as scripts_bp  # type: ignore
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 app = Flask(__name__)
+# Nginx 등 외부 프록시 헤더를 신뢰하고 인식하도록 보정 (/ptss 등의 서브디렉토리 라우팅 완벽 지원)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 load_dotenv()
