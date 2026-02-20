@@ -181,7 +181,7 @@ window.PTSS.SFTP = {
 
     download(remotePath) {
         const config = window.PTSS.config;
-        window.location.href = `/api/sftp/download/${config.hostId}?path=${remotePath}`;
+        window.location.href = window.PTSS_BASE_URL + `/api/sftp/download/${config.hostId}?path=${remotePath}`;
     },
 
     viewLog(remotePath) {

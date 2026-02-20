@@ -8,6 +8,52 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=4">
     <script src="{{ url_for('static', filename='js/main.js') }}?v=4"></script>
+    <script>
+        // Nginx 리버스 프록시 서브 디렉토리(/ptss) 대응을 위한 전역 URL 패치
+        window.PTSS_BASE_URL = "{{ url_for('main.index') }}".replace(/\/$/, "");
+        
+        if (window.PTSS_BASE_URL) {
+            // 1. Fetch API 절대 경로 보정
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options) {
+                if (typeof url === 'string' && url.startsWith('/') && !url.startsWith(window.PTSS_BASE_URL)) {
+                    url = window.PTSS_BASE_URL + url;
+                }
+                return originalFetch(url, options);
+            };
+
+            // 2. Socket.IO 기본 경로 보정
+            const _io = window.io;
+            if (typeof _io === 'function') {
+                window.io = function() {
+                    let uri = arguments[0];
+                    let opts = arguments[1] || {};
+                    if (typeof uri === 'object') {
+                        opts = uri;
+                        uri = undefined;
+                    }
+                    if (!opts.path) {
+                        opts.path = window.PTSS_BASE_URL + '/socket.io';
+                    }
+                    return uri ? _io(uri, opts) : _io(opts);
+                };
+            }
+
+            // 3. HTML <a> 태그 하드코딩된 href 보정
+            document.addEventListener("DOMContentLoaded", () => {
+                const fixLinks = () => {
+                    document.querySelectorAll('a').forEach(a => {
+                        const href = a.getAttribute('href');
+                        if (href && href.startsWith('/') && !href.startsWith(window.PTSS_BASE_URL)) {
+                            a.setAttribute('href', window.PTSS_BASE_URL + href);
+                        }
+                    });
+                };
+                fixLinks();
+                new MutationObserver(fixLinks).observe(document.body, { childList: true, subtree: true });
+            });
+        }
+    </script>
     {% block extra_head %}{% endblock %}
 </head>
 <body>

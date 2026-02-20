@@ -10,7 +10,7 @@ window.PTSS.Session = {
         try {
             const config = window.PTSS.config;
             const resp = await fetch(`/api/disconnect/${config.hostId}`, { method: 'POST' });
-            if (resp.ok) window.location.href = '/';
+            if (resp.ok) window.location.href = window.PTSS_BASE_URL || '/';
         } catch (e) { alert('종료 중 오류가 발생했습니다.'); }
     },
 
