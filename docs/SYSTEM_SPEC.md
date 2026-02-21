@@ -40,6 +40,11 @@ PTSS(Premium Terminal & SFTP System)는 웹 기반의 SSH 클라이언트 및 �
 - **상세 내역 보존**: 실행된 명령어의 전문, 발생 시간, 대상 호스트 등의 데이터를 영구 저장하여 추후 보안 감사에 활용 가능
 - **컴팩트 테이블 뷰**: 대량의 히스토리 데이터를 한 화면에서 효율적으로 확인할 수 있도록 최적화된 정보 밀도 제공
 
+### 2.7 전역 다국어 지원 (Internationalization)
+- **다중 언어 인터페이스**: 한국어와 영어(EN) 전역 지원
+- **사용자 맞춤 언어 설정**: 브라우저 로케일에 따른 자동 감지 및 환경 설정에서의 수동 언어 변경 지원
+- **실시간 메시지 번역**: UI 요소뿐만 아니라 서버에서 전송되는 터미널 상태 메시지도 즉각 번역 적용
+
 ### 2.7 사용자 및 보안 관리
 - **역할 기반 접근 제어 (RBAC)**:
     - **Admin**: 호스트 관리, 사용자 관리, 전역 설정 관리 권한 보유
@@ -64,6 +69,7 @@ PTSS(Premium Terminal & SFTP System)는 웹 기반의 SSH 클라이언트 및 �
     - **`core/database.py`**: SQLAlchemy 인스턴스 (`db`) 관리
     - **`core/crypto.py`**: AES-256 데이터 암호화/복호화 유틸리티
     - **`core/state.py`**: SSH 세션, 백로그, 버퍼 등 전역 런타임 상태 관리
+    - **`core/i18n.py`**: 전역 다국어 관리자 (`I18nManager`)
 - **`ptss.py`**: 메인 애플리케이션 초기화, 블루프린트 등록, Socket.IO 이벤트 핸들링
 - **`blueprints/`**: 기능별 라우트 분리 (Auth, Admin, Terminal, API, History, Scripts)
 
@@ -134,7 +140,9 @@ PTSS는 오픈소스 가치와 상용 수준의 보안 기능을 동시에 충�
     - `check_users.py`, `debug_users.py`: DB 사용자 목록 및 권한 확인
     - `debug_host_auth.py`: 호스트 접속 및 인증 과정 디버깅
     - `check_design.py`: UI 디자인 요소 및 CSS 변수 정합성 검사
-- **테스트 스크립트**:
+    - `inspect_runtime.py`: 실시간 세션 및 소켓 백로그 상태 모니터링
+- **보안 및 테스트**:
+    - `security_scan.py`: 민감 정보 커밋 방지를 위한 보안 스캔 (Pre-commit 연동)
     - `test_login.py`: 로그인 기능 및 세션 처리 테스트 
     - `test_manual_ssh.py`: 수동 SSH 접속 기능 단위 테스트
     - `test_v2_setup.py`: 초기 설정(Setup) 프로세스 통합 테스트

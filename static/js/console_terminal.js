@@ -18,6 +18,9 @@ window.PTSS.Terminal = {
         // 소켓 이벤트 연결
         const socket = window.PTSS.socket;
         socket.on('terminal_output', (data) => this.handleOutput(data));
+
+        // Guard 초기화
+        if (window.PTSS.Guard) window.PTSS.Guard.init();
     },
 
     createTab() {
@@ -293,5 +296,42 @@ window.PTSS.Terminal = {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    }
+};
+
+window.PTSS.Guard = {
+    pendingTabId: null,
+
+    init() {
+        console.log("[PTSS] Guard System Initialized");
+        const socket = window.PTSS.socket;
+        socket.on('command_guard_required', (data) => this.show(data));
+    },
+
+    show(data) {
+        this.pendingTabId = data.tab_id;
+        document.getElementById('restrictedCommandText').textContent = data.command;
+        document.getElementById('commandGuardModal').style.display = 'flex';
+    },
+
+    confirm() {
+        const socket = window.PTSS.socket;
+        socket.emit('terminal_confirm_guard', { tab_id: this.pendingTabId });
+        this.close();
+    },
+
+    cancel() {
+        const socket = window.PTSS.socket;
+        socket.emit('terminal_cancel_guard', { tab_id: this.pendingTabId });
+        this.close();
+    },
+
+    close() {
+        document.getElementById('commandGuardModal').style.display = 'none';
+        this.pendingTabId = null;
+        // 터미널 포커스 복구
+        if (PTSS.Terminal.activeTabId && PTSS.Terminal.tabs[PTSS.Terminal.activeTabId]) {
+            PTSS.Terminal.tabs[PTSS.Terminal.activeTabId].term.focus();
+        }
     }
 };

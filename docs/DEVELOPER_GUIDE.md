@@ -43,35 +43,45 @@ python ptss.py
   - `ssh_manager.py`: 실시간 SSH/SFTP 중계 로직
   - `state.py`: 세션 백로그 및 버퍼 관리 (Persistence Layer)
   - `crypto.py`: 마스터 키 기반 암호화 유틸리티
+  - `i18n.py`: `I18nManager`를 통한 서버/클라이언트 다국어 통합 관리
 - **`blueprints/`**: 기능 단위별 Flask 라우트 분리
-- **`static/`**: CSS, JavaScript (Vanilla JS 위주)
+- **`i18n/`**: 각 언어별 번역 리소스 (`ko.json`, `en.json`)
+- **`static/`**: CSS, JavaScript (역할별 모듈화 구성)
 - **`templates/`**: HTML (Jinja2 템플릿 엔진)
-- **`tools/`**: DB 마이그레이션, 테스트, 배포 보조 도구
+- **`tools/`**: DB 마이그레이션, 보안 점검, 배포 자동화 도구
 
 ## 5. 코딩 규칙 (Coding Rules)
 - **주석 및 가이드**: 모든 코드 설명과 주석은 **한국어**로 작성합니다.
 - **크로스 플랫폼**: Windows 개발 및 Linux 배포 환경을 모두 고려하여 경로 처리 시 `os.path.join` 등을 적극 사용합니다.
 - **보안**: 비밀번호나 개인키는 원본 그대로 DB에 저장하거나 로그에 남기지 않도록 주의하십시오.
 
-## 6. 테스트 및 도구 활용
-`/tools` 디렉토리의 스크립트들을 적극 활용하여 기능을 검증하십시오.
-- `test_login.py`: 로그인 세션 검증
-- `inspect_runtime.py`: 현재 메모리 상의 세션 상태 확인
-- `check_design.py`: CSS 변수 및 UI 정합성 점검
+## 6. 보안 및 품질 관리 (Security & Quality)
+명격한 보안 정책 준수를 위해 Git 커밋 전 자동으로 보안 스캔이 실행됩니다.
+- **Pre-commit Hook**: `.git/hooks/pre-commit`에 보안 스캔 로직이 연결되어 있습니다.
+- **수동 스캔**: `python tools/security_scan.py` 명령으로 실시간 탐지가 가능합니다. (사설 IP, 개인 계정 정보, 하드코딩된 비밀번호 등 탐지)
 
-## 6. 필수 유지 도구 (Essential Tools /tools)
+## 7. 테스트 및 도구 활용
+`/tools` 디렉토리의 스크립트들을 적극 활용하여 기능을 검증하십시오.
+- `test_login.py`: 로그인 세션 및 RBAC 검증
+- `test_v2_setup.py`: 초기 설정 마법사 프로세스 테스트
+- `inspect_runtime.py`: 현재 메모리 상의 세션 및 소켓 백로그 상태 확인
+- `check_design.py`: CSS 변수 및 UI 디자인 정합성 점검
+
+## 8. 필수 유지 도구 (Essential Tools /tools)
 문서화 및 유지보수를 위해 상시 유지되는 핵심 스크립트 목록입니다.
 
 | 도구명 | 용도 | 사용 시점 |
 | :--- | :--- | :--- |
 | `init_db.py` | 데이터베이스 초기화 및 테이블 생성 | 최초 설치 시 |
 | `migrate_v2.py` | v2 보안 스키마로의 마이그레이션 | 업그레이드 시 |
+| `security_scan.py` | 민감 정보(IP, PW, 계정) 커밋 전 탐지 | Git Commit 전 자동/수동 |
+| `deploy_ptss.py` | 원격 서버(Linux) 자동 배포 및 재시작 | 코드 수정 후 배포 시 |
 | `sync_admin.py` | 관리자 계정 권한 및 데이터 정합성 체크 | 관리자 로그인 이슈 발생 시 |
-| `deploy_ptss.py` | 홈 서버(Linux) 자동 배포 및 재시작 | 코드 수정 후 배포 시 |
 | `inspect_runtime.py` | 메모리 내 세션 및 공유 상태 실시간 모니터링 | 런타임 디버깅 시 |
 | `check_design.py` | CSS 변수 및 UI 디자인 정합성 감사 | UI 스타일 수정 후 |
-| `test_login.py` | 로그인 프로세스 및 세션 관리 자동 테스트 | 핵심 로직 수정 후 |
-| `test_v2_setup.py` | 초기 설정 마법사 통합 테스트 | 설정 로직 수정 후 |
+| `test_login.py` | 로그인 프로세스 및 세션 관리 통합 테스트 | 핵심 로직 수정 후 |
+| `parse_auth_log.py` | 시스템 인증 로그 패턴 분석 및 가시화 | 보안 감사 및 로그 분석 시 |
+| `quick_patch.py` | 특정 호스트/DB에 대한 긴급 패치 적용 | 긴급 상황 발생 시 |
 
 ---
 *새로운 아이디어나 버그 수정은 Pull Request를 통해 기여해 주시기 바랍니다.*

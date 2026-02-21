@@ -12,3 +12,5 @@ sid_to_host = {}  # SID - HostID 매핑
 input_buffers = {}  # 전역 버퍼 관리
 terminal_buffers = {}  # (user_id, host_id, tab_id) -> "current_command_string"
 host_watchers = {}  # host_id -> set(sids) - 모니터링 구독자 관리
+pending_guards = {}  # (user_id, host_id, tab_id) -> pending_command_to_confirm
+recording_sessions = {}  # (user_id, host_id, tab_id) -> { "file": handle, "start_time": t }

@@ -76,6 +76,28 @@
                     </div>
                 </div>
 
+                <div style="margin-top: 40px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 20px;">📹 {{ _('recording_settings') }}</h3>
+                    
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; background: rgba(56, 189, 248, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.1);">
+                            <div style="flex: 1;">
+                                <span style="display: block; font-weight: 600; color: var(--accent-color); margin-bottom: 4px;">📦 {{ _('auto_compress') }}</span>
+                                <span style="display: block; font-size: 0.8rem; color: var(--text-muted);">{{ _('auto_compress_desc') }}</span>
+                            </div>
+                            <input type="checkbox" name="rec_auto_compress" value="true" {% if rec_auto_compress == 'true' %}checked{% endif %} style="width: 24px; height: 24px; cursor: pointer; margin: 0;">
+                        </label>
+                    </div>
+
+                    <div style="margin-bottom: 30px;">
+                        <label style="display: block; margin-bottom: 12px; font-weight: 600;">📅 {{ _('recording_retention') }}</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="number" name="rec_retention_days" value="{{ rec_retention_days }}" min="3" max="365" style="width: 100px; padding: 10px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; color: white;">
+                            <span style="color: var(--text-muted); font-size: 0.9rem;">{{ _('days') }} ({{ _('retention_desc') }})</span>
+                        </div>
+                    </div>
+                </div>
+
                 <button type="submit" class="btn btn-primary" style="width: 100%;">{{ _('save_system_settings') }}</button>
             </form>
         </div>

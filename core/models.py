@@ -33,6 +33,7 @@ class History(db.Model):
     timestamp = db.Column(
         db.DateTime, default=lambda: datetime.utcnow() + timedelta(hours=9)
     )
+    recording_path = db.Column(db.String(255))  # 터미널 녹화 파일 경로 추가
 
 
 class Config(db.Model):

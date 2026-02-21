@@ -170,11 +170,16 @@
     "success_no_output": "Success (no output)",
     "error_execution_comm": "❌ A communication error occurred during execution.",
     "write_script_here": "Write your script here.",
-    "terminal_restore_msg": "[PTSS] Session restored...",
+    "terminal_restore_msg": "[PTSS] Existing session restored...",
     "terminal_start_fail_msg": "[PTSS] Failed to start shell session.",
-    "terminal_connect_success_msg": "[PTSS] Real-time server connected...",
-    "terminal_restricted_msg": "[PTSS] Forbidden command detected: '{keyword}'",
+    "terminal_connect_success_msg": "[PTSS] Real-time server connection successful...",
+    "terminal_restricted_msg": "[PTSS] Command contains restricted keyword: '{keyword}'",
     "upload_success": "Upload successful",
     "upload_fail": "Upload failed",
-    "error_load": "Load failed"
+    "error_load": "Load failed",
+    "security_warning": "Security Warning",
+    "restricted_command_detected": "A risky or restricted command has been detected.",
+    "restricted_command_desc": "This command contains keywords that could have a critical impact on the system. Please verify its safety before execution. Use at your own risk; this attempt will be logged.",
+    "cancel_execution": "Cancel Execution",
+    "confirm_execution": "Confirm and Execute"
 }

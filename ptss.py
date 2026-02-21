@@ -9,14 +9,14 @@ eventlet.monkey_patch()  # type: ignore
 import os
 import logging
 from logging.handlers import RotatingFileHandler
-from flask import Flask, request, redirect, url_for, session
+from flask import Flask, request, redirect, url_for
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
 
 from core.database import db
-from core.models import Host, History, Config, User
-from core.utils import get_client_ip
-from core.sockets import register_socket_events, stats_monitoring_task
+from core.models import Host, Config, User
+from core.sockets import register_socket_events
+from core.monitor import stats_monitoring_task
 from core.i18n import I18nManager, _
 
 # Blueprints
@@ -123,6 +123,8 @@ with app.app_context():
         "sftp_sort_by": "name",
         "session_retention": "maintain",
         "ssh_keepalive_interval": "30",
+        "rec_auto_compress": "true",
+        "rec_retention_days": "30",
     }
     for key, value in default_configs.items():
         if not Config.query.filter_by(key=key).first():

@@ -24,6 +24,8 @@ def view_settings():
         sftp_sort = request.form.get("sftp_sort_by")
         keepalive = request.form.get("ssh_keepalive_interval", "0")
         retention = request.form.get("session_retention", "maintain")
+        rec_compress = request.form.get("rec_auto_compress", "false")
+        rec_retention = request.form.get("rec_retention_days", "30")
         lang = request.form.get("lang")
 
         if lang:
@@ -61,6 +63,22 @@ def view_settings():
         else:
             conf_ret.value = retention
 
+        # Recording Compression update
+        conf_rc = Config.query.filter_by(key="rec_auto_compress").first()
+        if not conf_rc:
+            conf_rc = Config(key="rec_auto_compress", value=rec_compress)
+            db.session.add(conf_rc)
+        else:
+            conf_rc.value = rec_compress
+
+        # Recording Retention update
+        conf_rr = Config.query.filter_by(key="rec_retention_days").first()
+        if not conf_rr:
+            conf_rr = Config(key="rec_retention_days", value=rec_retention)
+            db.session.add(conf_rr)
+        else:
+            conf_rr.value = rec_retention
+
         db.session.commit()
         return redirect(url_for("main.view_settings"))
 
@@ -76,10 +94,18 @@ def view_settings():
     retention = Config.query.filter_by(key="session_retention").first()
     ret_val = retention.value if retention else "maintain"
 
+    rec_compress = Config.query.filter_by(key="rec_auto_compress").first()
+    rec_compress_val = rec_compress.value if rec_compress else "false"
+
+    rec_retention = Config.query.filter_by(key="rec_retention_days").first()
+    rec_retention_val = rec_retention.value if rec_retention else "30"
+
     return render_template(
         "settings.html",
         log_view_mode=mode_val,
         sftp_sort_by=sort_val,
         ssh_keepalive_interval=ka_val,
         session_retention=ret_val,
+        rec_auto_compress=rec_compress_val,
+        rec_retention_days=rec_retention_val,
     )

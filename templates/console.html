@@ -88,6 +88,28 @@
     </div>
 </div>
 
+<!-- Command Guard Modal -->
+<div id="commandGuardModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="width: 450px; background: #1e293b; border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.4); overflow: hidden; box-shadow: 0 0 40px rgba(239, 68, 68, 0.2);">
+        <div class="modal-header" style="background: rgba(239, 68, 68, 0.1); border-bottom: 1px solid rgba(239, 68, 68, 0.2); padding: 15px 20px;">
+            <h3 style="color: #ef4444; display: flex; align-items: center; gap: 10px; margin: 0;">
+                <span style="font-size: 1.2rem;">⚠️</span> {{ _('security_warning') }}
+            </h3>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+            <p style="margin-bottom: 15px; color: #e2e8f0; font-weight: 500; font-size: 1rem;">{{ _('restricted_command_detected') }}</p>
+            <div style="background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px;">
+                <code id="restrictedCommandText" style="color: #fbbf24; font-family: 'JetBrains Mono'; font-size: 0.9rem; word-break: break-all; white-space: pre-wrap;"></code>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; margin: 0;">{{ _('restricted_command_desc') }}</p>
+        </div>
+        <div class="modal-footer" style="padding: 15px 20px; background: rgba(0,0,0,0.1); display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05);">
+            <button class="btn btn-outline" onclick="PTSS.Guard.cancel()">{{ _('cancel_execution') }}</button>
+            <button class="btn" onclick="PTSS.Guard.confirm()" style="background: #ef4444; color: white; border: none; padding: 0 20px; height: 40px; font-weight: 600; border-radius: 8px; cursor: pointer;">{{ _('confirm_execution') }}</button>
+        </div>
+    </div>
+</div>
+
 <div class="console-container-wrapper">
     <div class="console-container" id="resizableContainer">
         <!-- Terminal Stack: Holds multiple terminal instances -->

@@ -1,9 +1,47 @@
-from flask import Blueprint, render_template, request, session  # type: ignore
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    session,
+    send_from_directory,
+    abort,
+)  # type: ignore
+import os
 from core.database import db  # type: ignore
 from core.models import History, User, Host  # type: ignore
 from core.decorators import login_required  # type: ignore
 
 bp = Blueprint("history", __name__)
+
+
+@bp.route("/history/recording/<int:history_id>")
+@login_required
+def view_recording(history_id):
+    history = History.query.get_or_404(history_id)
+
+    # 일반 사용자는 본인 세션만 확인 가능
+    if session.get("role") != "admin" and history.user_id != session.get("user_id"):
+        abort(403)
+
+    if not history.recording_path:
+        abort(404)
+
+    path = history.recording_path
+    if not os.path.exists(path):
+        abort(404)
+
+    if path.endswith(".gz"):
+        import gzip
+        from flask import Response
+
+        with gzip.open(path, "rb") as f:
+            content = f.read()
+        return Response(content, mimetype="application/json")
+
+    filename = os.path.basename(path)
+    directory = os.path.dirname(os.path.abspath(path))
+
+    return send_from_directory(directory, filename)
 
 
 @bp.route("/history")

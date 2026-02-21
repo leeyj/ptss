@@ -58,33 +58,33 @@
                     <tbody>
                         {% for u in users %}
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                            <td style="padding: 15px; color: white; font-weight: 600;">{{ u.username }}</td>
-                            <td style="padding: 15px;">
+                            <td style="padding: 15px; color: white; font-weight: 600; vertical-align: middle;">{{ u.username }}</td>
+                            <td style="padding: 15px; vertical-align: middle;">
                                 <span style="background: {% if u.role == 'admin' %}rgba(56, 189, 248, 0.1){% else %}rgba(100, 116, 139, 0.1){% endif %}; 
                                              color: {% if u.role == 'admin' %}var(--accent-color){% else %}var(--text-muted){% endif %}; 
-                                             padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
+                                             padding: 0 12px; height: 32px; display: inline-flex; align-items: center; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; box-sizing: border-box; border: 1px solid transparent;">
                                     {{ u.role }}
                                 </span>
                             </td>
-                            <td style="padding: 15px;">
+                            <td style="padding: 15px; vertical-align: middle;">
                                 {% if u.role != 'admin' %}
-                                <form action="/admin/users/update_restrictions/{{ u.id }}" method="POST" style="display: flex; gap: 8px; margin: 0;">
+                                <form action="/admin/users/update_restrictions/{{ u.id }}" method="POST" style="display: flex; gap: 8px; margin: 0; align-items: center;">
                                     <input type="text" name="restricted_commands" value="{{ u.restricted_commands or '' }}" 
                                            placeholder="{{ _('restriction_placeholder') }}" 
-                                           style="flex: 1; min-width: 150px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 6px; color: white; font-size: 0.8rem;">
-                                    <button type="submit" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;">{{ _('save') }}</button>
+                                           style="flex: 1; min-width: 150px; height: 32px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); padding: 0 12px; border-radius: 6px; color: white; font-size: 0.8rem; box-sizing: border-box; margin: 0;">
+                                    <button type="submit" class="btn btn-outline" style="height: 32px; padding: 0 15px; font-size: 0.8rem; min-width: 60px; margin: 0;">{{ _('save') }}</button>
                                 </form>
                                 {% else %}
-                                <span style="font-size: 0.8rem; color: var(--text-muted); opacity: 0.5;">{{ _('no_restrictions_admin') }}</span>
+                                <span style="font-size: 0.8rem; color: var(--text-muted); opacity: 0.5; height: 32px; display: flex; align-items: center;">{{ _('no_restrictions_admin') }}</span>
                                 {% endif %}
                             </td>
-                            <td style="padding: 15px;">
+                            <td style="padding: 15px; vertical-align: middle;">
                                 {% if u.username != 'admin' and u.id != session.user_id %}
-                                <form action="/admin/users/delete/{{ u.id }}" method="POST" style="margin: 0;" onsubmit="return confirm('{{ _('delete_confirm') }}');">
-                                    <button type="submit" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; font-size: 0.75rem; cursor: pointer; padding: 4px 10px; border-radius: 6px; font-weight: 600; transition: all 0.2s;">{{ _('delete') }}</button>
+                                <form action="/admin/users/delete/{{ u.id }}" method="POST" style="margin: 0; display: flex; align-items: center;" onsubmit="return confirm('{{ _('delete_confirm') }}');">
+                                    <button type="submit" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; font-size: 0.8rem; cursor: pointer; height: 32px; padding: 0 12px; border-radius: 6px; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; margin: 0;">{{ _('delete') }}</button>
                                 </form>
                                 {% else %}
-                                <span style="font-size: 0.85rem; color: rgba(255,255,255,0.2);">{{ _('cannot_delete') }}</span>
+                                <span style="font-size: 0.85rem; color: rgba(255,255,255,0.2); height: 32px; display: flex; align-items: center;">{{ _('cannot_delete') }}</span>
                                 {% endif %}
                             </td>
                         </tr>

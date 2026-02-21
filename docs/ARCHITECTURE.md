@@ -45,7 +45,10 @@ PTSS는 Python Flask와 Socket.IO를 이용한 비동기 서버와 클라이언�
 ### 2. 주요 모듈 설계
 - **Persistence Layer (`state.py`)**: 세션이 끊겨도 터미널 프로세스와 출력 데이터를 서버 메모리에 유지합니다. `collections.deque`를 사용하여 최근 2000줄의 로그를 보관하고 재접속 시 클라이언트에 즉시 전달합니다.
 - **WebSocket Gateway (`ptss.py`)**: 클라이언트의 소켓 ID(SID)가 변경되더라도 `active_sids` 매핑을 통해 올바른 터미널 세션으로 데이터를 중계합니다.
+- **I18N Module (`core/i18n.py`)**: `I18nManager`를 통해 Jinja2 템플릿과 JavaScript, 그리고 서버 시스템 메시지까지 통합된 다국어 환경을 제공합니다.
 - **Crypto Engine**: 원격 서버 접속을 위한 개인키를 AES-256 방식으로 안전하게 보관하고 메모리 상에서만 복호화하여 사용합니다.
+- **Interactive Guard (PAM Module)**: 위험 대상을 실시간 필터링하고, `rm -rf` 등에 대해 실행 차단 및 사용자 확인 인터럽트 프로세스를 제공합니다.
+- **Session Recording Engine**: `asciinema` 호환 포맷으로 입출력을 녹화하며, Gzip 압축 및 자동 클린업 보관 주기를 관리합니다.
 
 ### 3. 데이터베이스 스키마 (ERD)
 
@@ -85,3 +88,6 @@ PTSS는 Python Flask와 Socket.IO를 이용한 비동기 서버와 클라이언�
 └───────────────┘              │ created_at                │
                                └───────────────────────────┘
 ```
+### 4. 개발 및 보안 자동화 (DevSecOps)
+- **보안 가드**: `pre-commit hook`이 `tools/security_scan.py`를 실행하여 민감한 정보(사설 IP, 개인 계정, PW 패턴 등)가 저장소에 유입되는 것을 원천 차단합니다.
+- **자동 배포**: `deploy_ptss.py`를 통해 로컬 변경 사항을 원격 리눅스 서버에 즉시 동기화하고, 논블로킹 방식으로 서비스를 재시작합니다.
