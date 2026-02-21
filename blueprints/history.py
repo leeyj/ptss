@@ -105,25 +105,28 @@ def view_history():
             "q": search_query,
         },
         stats_summary={
-            "most_active_user": db.session.query(User.username)
-            .join(History)
-            .group_by(User.username)
-            .order_by(db.func.count(History.id).desc())
-            .first()[0]
-            if db.session.query(User.username).join(History).first()
-            else "N/A",
-            "most_used_host": db.session.query(Host.name)
-            .join(History)
-            .group_by(Host.name)
-            .order_by(db.func.count(History.id).desc())
-            .first()[0]
-            if db.session.query(Host.name).join(History).first()
-            else "N/A",
-            "top_action": db.session.query(History.action_type)
-            .group_by(History.action_type)
-            .order_by(db.func.count(History.id).desc())
-            .first()[0]
-            if db.session.query(History.action_type).first()
-            else "N/A",
+            "most_active_user": (
+                db.session.query(User.username)
+                .join(History, History.user_id == User.id)
+                .group_by(User.username)
+                .order_by(db.func.count(History.id).desc())
+                .first()
+                or ["N/A"]
+            )[0],
+            "most_used_host": (
+                db.session.query(Host.name)
+                .join(History, History.host_id == Host.id)
+                .group_by(Host.name)
+                .order_by(db.func.count(History.id).desc())
+                .first()
+                or ["N/A"]
+            )[0],
+            "top_action": (
+                db.session.query(History.action_type)
+                .group_by(History.action_type)
+                .order_by(db.func.count(History.id).desc())
+                .first()
+                or ["N/A"]
+            )[0],
         },
     )

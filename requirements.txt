@@ -5,3 +5,6 @@ python-dotenv
 cryptography
 flask-socketio
 eventlet
+pytest
+pytest-mock
+pytest-cov

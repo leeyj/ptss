@@ -10,3 +10,7 @@ line-length = 88
 # Ignore `F401` (imported but unused) in `__init__.py` files.
 "__init__.py" = ["F401"]
 "ptss.py" = ["E402"] # Module level import not at top of file
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

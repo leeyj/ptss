@@ -31,8 +31,21 @@ from blueprints.scripts import bp as scripts_bp
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
-# Cloudflare -> Nginx 등 다중 프록시 환경을 고려하여 x_for=2 설정 (필요 시 조정)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=2, x_proto=1, x_host=1, x_prefix=1)
+
+# 환경 변수 기반 프록시 설정 (Cloudflare/Nginx 등)
+load_dotenv()
+USE_PROXY = os.getenv("PTSS_USE_PROXY", "false").lower() == "true"
+if USE_PROXY:
+    x_for = int(os.getenv("PTSS_PROXY_FIX_X_FOR", "1"))
+    x_proto = int(os.getenv("PTSS_PROXY_FIX_X_PROTO", "1"))
+    x_host = int(os.getenv("PTSS_PROXY_FIX_X_HOST", "1"))
+    x_prefix = int(os.getenv("PTSS_PROXY_FIX_X_PREFIX", "1"))
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app, x_for=x_for, x_proto=x_proto, x_host=x_host, x_prefix=x_prefix
+    )
+    logging.info(f"ProxyFix enabled: x_for={x_for}, x_prefix={x_prefix}")
+else:
+    logging.info("Running in Native Mode (ProxyFix disabled)")
 
 # 로깅 설정 (ptss.log 작성)
 basedir = os.path.abspath(os.path.dirname(__file__))
