@@ -1,6 +1,6 @@
 # ☁️ 홈 서버 도메인 & Cloudflare 마이그레이션 통합 가이드
 
-이 문서는 홈 서버의 외부 접속 환경을 아이파이타임 주소(`iptime.org`)에서 정식 도메인(`carls-dev.org`)으로 이전하고, Cloudflare를 통한 HTTPS 보안 및 서브도메인 관리를 설정하는 모든 과정을 담고 있습니다.
+이 문서는 홈 서버의 외부 접속 환경을 아이파이타임 주소(`iptime.org`)에서 정식 도메인(`<YOUR_DOMAIN>`)으로 이전하고, Cloudflare를 통한 HTTPS 보안 및 서브도메인 관리를 설정하는 모든 과정을 담고 있습니다.
 
 ---
 
@@ -9,7 +9,7 @@
 마치 내 집 주소를 정하는 것과 같은 기본 정보입니다. 1년 뒤 갱신을 잊지 마세요!
 
 *   **구입처:** [Spaceship.com](https://www.spaceship.com)
-*   **구매한 도메인:** `carls-dev.org`
+*   **구매한 도메인:** `<YOUR_DOMAIN>`
 *   **구입/갱신일:** 매년 **2월 21일** (차기 갱신일: **2027-02-21**)
 *   **예상 비용:** 약 $9.00 ~ $11.00 (환율에 따라 약 1.3~1.5만 원 수준)
 *   **갱신 팁:** 만료 1개월 전에 Spaceship에서 알림 메일이 오면 결제 정보를 업데이트하여 자동 갱신되도록 설정하는 것이 안전합니다.
@@ -30,8 +30,8 @@
 
 | Type  | Name (이름) | Target/IPv4 (대상) | Proxy status (구름) | 설명 |
 |-------|-------------|--------------------|----------------------------|------|
-| **A** | `carls-dev.org` (혹은 `@`) | **우리 집 외부 IP** | 🟠 **Proxied** | 메인 도메인을 집 IP로 연결 |
-| **CNAME** | `*` (별표 단일 기호) | `carls-dev.org` | 🟠 **Proxied** | `ptss`, `komga` 등 모든 서브도메인 자동 연결 |
+| **A** | `<YOUR_DOMAIN>` (혹은 `@`) | **우리 집 외부 IP** | 🟠 **Proxied** | 메인 도메인을 집 IP로 연결 |
+| **CNAME** | `*` (별표 단일 기호) | `<YOUR_DOMAIN>` | 🟠 **Proxied** | `ptss`, `komga` 등 모든 서브도메인 자동 연결 |
 | **A** | `air` (에어코믹스 전용) | **우리 집 외부 IP** | ⚪️ **DNS Only** | 구형 앱(HTTP 전용)을 위한 직통 차선 |
 
 ---
@@ -64,7 +64,7 @@ server {
 # ==========================================================
 server {
     listen 80;
-    server_name ptss.carls-dev.org;
+    server_name ptss.<YOUR_DOMAIN>;
     location / {
         proxy_pass http://127.0.0.1:6001; 
         proxy_set_header Host $host;
@@ -82,7 +82,7 @@ server {
 # ==========================================================
 server {
     listen 80;
-    server_name komga.carls-dev.org;
+    server_name komga.<YOUR_DOMAIN>;
     client_max_body_size 0;
     location / {
         proxy_pass http://127.0.0.1:5200;
@@ -98,7 +98,7 @@ server {
 # ==========================================================
 server {
     listen 80;
-    server_name aegis.carls-dev.org;
+    server_name aegis.<YOUR_DOMAIN>;
     location / {
         proxy_pass http://127.0.0.1:5700;
         proxy_set_header Host $host;
@@ -113,7 +113,7 @@ server {
 # ==========================================================
 server {
     listen 80;
-    server_name plex.carls-dev.org;
+    server_name plex.<YOUR_DOMAIN>;
     send_timeout 100m;
     client_max_body_size 0;
     location / {

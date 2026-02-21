@@ -1,6 +1,6 @@
 # Nginx 리버스 프록시 구축 가이드 (서브 디렉토리 방식)
 
-이 문서는 우분투 홈 서버에서 여러 개의 분산된 서비스 포트를 하나의 도메인(`az001a.iptime.org`)의 서브 디렉토리(예: `/ptss`, `/nas`)로 매핑하여 보안과 관리 편의성을 극대화하는 Nginx 리버스 프록시 설정 가이드입니다.
+이 문서는 우분투 홈 서버에서 여러 개의 분산된 서비스 포트를 하나의 도메인(`<YOUR_DOMAIN>`)의 서브 디렉토리(예: `/ptss`, `/nas`)로 매핑하여 보안과 관리 편의성을 극대화하는 Nginx 리버스 프록시 설정 가이드입니다.
 
 ---
 
@@ -52,7 +52,7 @@ server {
     listen 80;
     
     # 본인의 아이피타임 도메인 입력
-    server_name az001a.iptime.org;
+    server_name <YOUR_DOMAIN>;
 
     # ==========================================================
     # 1. 서브 디렉토리: PTSS 앱 (/ptss 연결)
@@ -131,7 +131,7 @@ sudo nginx -t
 # Nginx 서비스 재시작하여 적용
 sudo systemctl restart nginx
 ```
-> **여기까지 완료하셨다면 HTTP 연결이 성공적으로 라우팅됩니다! (`http://az001a.iptime.org/ptss`)**
+> **여기까지 완료하셨다면 HTTP 연결이 성공적으로 라우팅됩니다! (`http://<YOUR_DOMAIN>/ptss`)**
 
 ---
 
@@ -144,12 +144,12 @@ sudo apt install certbot python3-certbot-nginx -y
 
 # 인증서 발급 신청 (이메일 및 동의, 도메인 입력 필요)
 # Nginx 설정 파일에 알아서 HTTPS(443) 코드를 주입해줍니다.
-sudo certbot --nginx -d az001a.iptime.org
+sudo certbot --nginx -d <YOUR_DOMAIN>
 ```
 
 인증서 발급 절차가 모두 완료되면, Certbot이 이전 단계(3단계)에서 만든 Nginx 파일에 알아서 `listen 443 ssl...` 등 암호화 구문들을 추가(수정)해 줍니다. 
 
-> **완료되었습니다! 이제 `https://az001a.iptime.org/ptss` 로 접속해보세요!**
+> **완료되었습니다! 이제 `https://<YOUR_DOMAIN>/ptss` 로 접속해보세요!**
 
 ---
 
@@ -174,7 +174,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 ### 🔧 [구글 클라우드 콘솔 Oauth 세팅]
 리다이렉션 승인 주소를 새 HTTPS 기반의 묶음 경로로 꼭 수정해주세요.
 * **기존:** `http://...:6001/auth/google/callback`
-* **변경:** `https://az001a.iptime.org/ptss/auth/google/callback`
+* **변경:** `https://<YOUR_DOMAIN>/ptss/auth/google/callback`
 
 ---
 
@@ -187,7 +187,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 1. `sudo nano /etc/nginx/sites-available/default` 를 엽니다.
 2. `listen 80;` 을 `listen 8080;` (또는 81 등 사용하지 않는 포트)로 변경합니다.
 3. `sudo systemctl restart nginx`
-* **단점:** 접속할 때 `http://az001a.iptime.org:8080/ptss` 처럼 항상 뒤에 포트를 붙여야 하며, Certbot(무료 HTTPS) 자동 적용이 매우 까다로워집니다.
+* **단점:** 접속할 때 `http://<YOUR_DOMAIN>:8080/ptss` 처럼 항상 뒤에 포트를 붙여야 하며, Certbot(무료 HTTPS) 자동 적용이 매우 까다로워집니다.
 
 ### 해결책 2: 아파치를 다른 포트로 밀어내고 Nginx가 80번 차지 (추천)
 Nginx를 정문(프록시)으로 쓰려면 Nginx가 80과 443번을 가져야 합니다.
