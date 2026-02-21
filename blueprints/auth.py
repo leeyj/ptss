@@ -79,23 +79,41 @@ def login():
             session["username"] = user.username
             session["role"] = user.role
 
-            # 감사 로그: 로그인 기록
+            # 실제 IP 추출 (Cloudflare 및 프록시 고려)
+            real_ip = (
+                request.headers.get("CF-Connecting-IP")
+                or request.headers.get("X-Forwarded-For", request.remote_addr)
+                .split(",")[0]
+                .strip()
+            )
+            user_agent = request.headers.get("User-Agent", "Unknown")
+
+            # 감사 로그: 로그인 기록 강화
             new_hist = History(
                 user_id=user.id,
                 action_type="LOGIN",
-                detail=f"User {user.username} logged in",
-                extra_info=f"IP: {request.remote_addr}",
+                detail=f"사용자 {user.username} 로그인 성공",
+                extra_info=f"IP: {real_ip} | UA: {user_agent}",
             )
             db.session.add(new_hist)
             db.session.commit()
 
             return redirect(url_for("main.index"))
 
-        # 감사 로그: 로그인 실패 기록
+        # 실제 IP 추출 (Cloudflare 및 프록시 고려)
+        real_ip = (
+            request.headers.get("CF-Connecting-IP")
+            or request.headers.get("X-Forwarded-For", request.remote_addr)
+            .split(",")[0]
+            .strip()
+        )
+        user_agent = request.headers.get("User-Agent", "Unknown")
+
+        # 감사 로그: 로그인 실패 기록 강화
         new_hist = History(
             action_type="AUTH_FAIL",
-            detail=f"Failed login attempt for username: {username}",
-            extra_info=f"IP: {request.remote_addr}",
+            detail=f"로그인 실패 (ID 시도: {username})",
+            extra_info=f"IP: {real_ip} | UA: {user_agent}",
         )
         db.session.add(new_hist)
         db.session.commit()

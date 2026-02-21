@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from core.database import db  # type: ignore
 
 
@@ -29,7 +30,9 @@ class History(db.Model):
     )  # COMMAND, SCRIPT, LOGIN, LOGOUT, AUTH_FAIL, FILE_VIEW 등
     detail = db.Column(db.Text, nullable=False)  # 명렁어나 액션 상세 내역
     extra_info = db.Column(db.Text)  # 크기, 경로, IP 주소 등
-    timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
+    timestamp = db.Column(
+        db.DateTime, default=lambda: datetime.utcnow() + timedelta(hours=9)
+    )
 
 
 class Config(db.Model):

@@ -86,9 +86,24 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-Prefix /nas;
     }
+
+    # ==========================================================
+    # 3. 서브 디렉토리: Komga 전용 설정 (Base URL을 /komga 로 설정한 경우)
+    # ⚠️ 매우 중요: proxy_pass 끝에 슬래시(/)가 없습니다!!
+    # ==========================================================
+    location /komga/ {
+        proxy_pass http://127.0.0.1:5200;  # 끝에 슬래시 없음
+        
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Server $host;
+    }
     
     # ----------------------------------------------------------
-    # (필요한 나머지 5개 서비스도 위와 동일한 복붙 패턴으로 포트만 변경하여 추가)
+    # (필요한 나머지 서비스도 위와 동일한 패턴으로 포트만 변경하여 추가)
     # ----------------------------------------------------------
 
     # ==========================================================

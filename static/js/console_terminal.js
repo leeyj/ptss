@@ -25,7 +25,9 @@ window.PTSS.Terminal = {
         const socket = window.PTSS.socket;
 
         this.tabCounter++;
-        const tabId = `session-${this.tabCounter}`;
+        // 탭 ID를 고유하게 생성 (현재 시간 + 랜덤값 조합)하여 여러 창/팝업 간 충돌 방지
+        const uniqueId = Math.random().toString(36).substring(2, 9);
+        const tabId = `session-${Date.now()}-${uniqueId}`;
 
         // 1. 탭 버튼 생성
         const tabBtn = document.createElement('div');

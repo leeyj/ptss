@@ -49,6 +49,8 @@
 
 ## [3차 고도화: 기업용 특권 권한 관리(PAM) 비전]
 
+💡 **상세 실행 계획서**: [PLAN_ENHANCEMENT_V3_PAM.md](./PLAN_ENHANCEMENT_V3_PAM.md)
+
 PTSS의 궁극적인 목표는 단순한 SSH 클라이언트를 넘어, 기업 내 인프라의 관문(Gateway)으로서 강력한 통제와 보안을 제공하는 것입니다.
 
 ### 1. 실시간 세션 녹화 및 리플레이 (Audit Recording)

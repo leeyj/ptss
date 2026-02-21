@@ -9,7 +9,11 @@ const Dashboard = (function () {
         monitoredHosts: new Set(),
 
         init: function () {
-            socket = io();
+            const socketOpts = {};
+            if (window.PTSS_BASE_URL) {
+                socketOpts.path = window.PTSS_BASE_URL + '/socket.io';
+            }
+            socket = io(socketOpts);
             this.setupListeners();
             console.log("Dashboard Module Initialized");
         },
@@ -123,7 +127,7 @@ const Dashboard = (function () {
             if (!confirm(`'${name}' 호스트를 삭제하시겠습니까?`)) return;
 
             try {
-                const response = await fetch(`/host/delete/${id}`, { method: 'POST' });
+                const response = await fetch((window.PTSS_BASE_URL || '') + `/host/delete/${id}`, { method: 'POST' });
                 if (response.ok) {
                     location.reload();
                 } else {
@@ -142,7 +146,7 @@ const Dashboard = (function () {
 
             const formData = new FormData(form);
             try {
-                const response = await fetch('/host/add', {
+                const response = await fetch((window.PTSS_BASE_URL || '') + '/host/add', {
                     method: 'POST',
                     body: formData
                 });

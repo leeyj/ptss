@@ -84,7 +84,8 @@
 </div>
 
 <!-- Ace Editor & Modules -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.23.1/ace.js"></script>
+<!-- Ace Editor is loaded from local vendor -->
+<script src="{{ url_for('static', filename='vendor/ace/ace.js') }}"></script>
 <script src="{{ url_for('static', filename='js/scripts_manager.js') }}"></script>
 <script>
     // Initialize ScriptManager with data from Jinja2

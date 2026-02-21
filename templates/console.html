@@ -1,15 +1,15 @@
 {% extends "layout.html" %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css" />
-<script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.7.0/lib/xterm-addon-fit.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xterm-addon-webgl@0.14.0/lib/xterm-addon-webgl.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/mode-python.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/mode-sh.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/mode-javascript.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/theme-dracula.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/xterm/xterm.css') }}" />
+<script src="{{ url_for('static', filename='vendor/xterm/xterm.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/xterm/xterm-addon-fit.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/xterm/xterm-addon-webgl.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/ace/ace.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/ace/mode-python.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/ace/mode-sh.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/ace/mode-javascript.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/ace/theme-dracula.js') }}"></script>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/console.css') }}">
 {% endblock %}
 
@@ -139,7 +139,7 @@
     <div class="resize-handle" id="resizeHandle"></div>
 </div>
 
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<!-- Socket.IO is loaded in layout.html -->
 <script>
     // 전역 설정 (Jinja2 -> JS 전달용)
     window.CONFIG = {

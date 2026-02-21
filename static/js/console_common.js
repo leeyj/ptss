@@ -5,10 +5,14 @@ window.PTSS = window.PTSS || {};
 window.PTSS.config = window.CONFIG || {};
 
 // 2. 소켓 초기화 (전역 공유)
-window.PTSS.socket = io({
-    transports: ['websocket'],
+const socketOpts = {
+    transports: ['websocket', 'polling'], // allow polling fallback to avoid hard stops
     reconnectionAttempts: 5
-});
+};
+if (window.PTSS_BASE_URL) {
+    socketOpts.path = window.PTSS_BASE_URL + '/socket.io';
+}
+window.PTSS.socket = io(socketOpts);
 
 // 소켓 연결 기본 로그
 window.PTSS.socket.on('connect', () => {

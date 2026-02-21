@@ -7,10 +7,8 @@ import eventlet  # type: ignore
 eventlet.monkey_patch()  # type: ignore
 
 import os
-
-# import sys
-# import functools
-# from datetime import datetime
+import logging
+from logging.handlers import RotatingFileHandler
 from collections import deque
 
 from flask import (  # type: ignore
@@ -21,10 +19,6 @@ from flask import (  # type: ignore
     session,
 )
 from flask_socketio import SocketIO, emit  # type: ignore
-
-# from flask_socketio import disconnect
-# from werkzeug.security import generate_password_hash, check_password_hash
-# from cryptography.fernet import Fernet  # type: ignore
 from dotenv import load_dotenv  # type: ignore
 
 from core.database import db  # type: ignore
@@ -55,10 +49,39 @@ from blueprints.scripts import bp as scripts_bp  # type: ignore
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
-# Nginx 등 외부 프록시 헤더를 신뢰하고 인식하도록 보정 (/ptss 등의 서브디렉토리 라우팅 완벽 지원)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+# Cloudflare -> Nginx 등 다중 프록시 환경을 고려하여 x_for=2 설정 (필요 시 조정)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=2, x_proto=1, x_host=1, x_prefix=1)
 
+
+def get_client_ip():
+    """Cloudflare 및 일반 프록시 헤더를 고려하여 실제 클라이언트 IP를 반환"""
+    # 1. Cloudflare 전용 헤더
+    cf_ip = request.headers.get("CF-Connecting-IP")
+    if cf_ip:
+        return cf_ip
+    # 2. 표준 프록시 헤더 (Nginx 등)
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    # 3. 직접 접속
+    return request.remote_addr
+
+
+# 로깅 설정 (ptss.log 작성)
 basedir = os.path.abspath(os.path.dirname(__file__))
+log_file = os.path.join(basedir, "ptss.log")
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] %(levelname)s [%(name)s] %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        RotatingFileHandler(
+            log_file, maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"
+        ),
+    ],
+)
+logger = logging.getLogger("PTSS")
+logger.info("PTSS Server starting up...")
 
 load_dotenv()
 db_url = os.getenv("DATABASE_URL")
@@ -231,33 +254,35 @@ def handle_disconnect_socket():
                 del host_watchers[host_id]
 
     # 2. Terminal Session Cleanup
-    s_info = sid_to_info.pop(sid, None)
-    if s_info:
-        user_id, host_id, tab_id = s_info
-        session_key = (user_id, host_id, tab_id)
-        active_sids.pop(session_key, None)
-        active_shells.pop(session_key, None)
+    infos = sid_to_info.pop(sid, [])
+    if infos:
+        # 해당 SID에 연결된 모든 탭 정보를 정리
+        for info in infos:
+            user_id, host_id, tab_id = info
+            session_key = (user_id, host_id, tab_id)
+            active_sids.pop(session_key, None)
+            active_shells.pop(session_key, None)
 
-        with app.app_context():
-            retention = Config.query.filter_by(key="session_retention").first()
-            if retention and retention.value == "terminate":
-                # 현재 사용자의 해당 호스트에 대해 다른 활성 탭이 있는지 확인
-                still_has_tabs = any(
-                    k[0] == user_id and k[1] == host_id for k in active_sids.keys()
-                )
+            with app.app_context():
+                retention = Config.query.filter_by(key="session_retention").first()
+                if retention and retention.value == "terminate":
+                    # 현재 사용자의 해당 호스트에 대해 다른 활성 탭이 있는지 확인
+                    still_has_tabs = any(
+                        k[0] == user_id and k[1] == host_id for k in active_sids.keys()
+                    )
 
-                if not still_has_tabs:
-                    manager = ssh_sessions.pop((user_id, host_id), None)
-                    if manager:
-                        print(
-                            f"[Policy] Closing SSH session for user {user_id}, host {host_id} (No more tabs)"
-                        )
-                        try:
-                            manager.close()
-                        except Exception as e:
-                            print(f"[Policy Error] Manager close fail: {e}")
-                else:
-                    print(f"[Policy] SSH session maintained (Remaining tabs exist)")
+                    if not still_has_tabs:
+                        manager = ssh_sessions.pop((user_id, host_id), None)
+                        if manager:
+                            print(
+                                f"[Policy] Closing SSH session for user {user_id}, host {host_id} (No more tabs)"
+                            )
+                            try:
+                                manager.close()
+                            except Exception as e:
+                                print(f"[Policy Error] Manager close fail: {e}")
+                    else:
+                        print("[Policy] SSH session maintained (Remaining tabs exist)")
 
 
 @socketio.on("start_monitoring")
@@ -350,7 +375,14 @@ def handle_terminal_connect(data):
     sid_to_host[sid] = host_id
     session_key = (user_id, host_id, tab_id)
     active_sids[session_key] = sid
-    sid_to_info[sid] = (user_id, host_id, tab_id)  # 튜플 보관
+
+    # sid_to_info를 리스트로 관리하여 멀티 탭 지원
+    if sid not in sid_to_info:
+        sid_to_info[sid] = []
+
+    # 중복 추가 방지
+    if (user_id, host_id, tab_id) not in sid_to_info[sid]:
+        sid_to_info[sid].append((user_id, host_id, tab_id))
 
     manager = ssh_sessions.get((user_id, host_id))
     if not manager:
@@ -425,10 +457,11 @@ def handle_terminal_input(data):
     sid = request.sid
     tab_id = data.get("tab_id", "default")
 
-    # sid_to_info에서 우선적으로 정보를 가져옴
-    s_info = sid_to_info.get(sid)
-    if s_info:
-        user_id, host_id, _ = s_info
+    # sid_to_info(리스트)에서 정보를 가져옴
+    infos = sid_to_info.get(sid, [])
+    if infos:
+        # 호스트 정보는 동일하므로 첫 번째 항목 사용
+        user_id, host_id, _ = infos[0]
     else:
         user_id = session.get("user_id")
         host_id = sid_to_host.get(sid)
@@ -474,6 +507,7 @@ def handle_terminal_input(data):
                                     user_id=user_id,
                                     action_type="BLOCKED",
                                     detail=full_cmd,
+                                    extra_info=f"IP: {get_client_ip()}",
                                 )
                                 db.session.add(new_hist)
                                 db.session.commit()
@@ -494,13 +528,17 @@ def handle_terminal_command(data):
     sid = request.sid
     cmd = data.get("command", "").strip()
     host_id = sid_to_host.get(sid)
-    s_info = sid_to_info.get(sid)
-    user_id = s_info[0] if s_info else session.get("user_id")
+    infos = sid_to_info.get(sid, [])
+    user_id = infos[0][0] if infos else session.get("user_id")
 
     if host_id and cmd:
         with app.app_context():
             new_hist = History(
-                host_id=host_id, user_id=user_id, action_type="COMMAND", detail=cmd
+                host_id=host_id,
+                user_id=user_id,
+                action_type="COMMAND",
+                detail=cmd,
+                extra_info=f"IP: {get_client_ip()}",
             )
             db.session.add(new_hist)
             db.session.commit()
@@ -511,9 +549,11 @@ def handle_terminal_resize(data):
     sid = request.sid
     tab_id = data.get("tab_id", "default")
 
-    s_info = sid_to_info.get(sid)
-    if s_info:
-        user_id, host_id, _ = s_info
+    # sid_to_info(리스트)에서 정보를 가져옴
+    infos = sid_to_info.get(sid, [])
+    if infos:
+        # 호스트 정보는 동일하므로 첫 번째 항목 사용
+        user_id, host_id, _ = infos[0]
     else:
         user_id = session.get("user_id")
         host_id = sid_to_host.get(sid)
