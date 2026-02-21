@@ -9,7 +9,7 @@
         <div class="auth-header">
             <div class="auth-logo">🚀</div>
             <h1 class="auth-title">System Setup</h1>
-            <p style="color: var(--text-muted); margin-top: 12px; font-size: 1rem;">PTSS 프리미엄 초기 설정을 시작합니다</p>
+            <p style="color: var(--text-muted); margin-top: 12px; font-size: 1rem;">{{ _('setup_desc') }}</p>
         </div>
 
         {% with messages = get_flashed_messages() %}
@@ -24,33 +24,32 @@
 
         <form method="POST">
             <div class="form-group">
-                <label class="form-label">관리자 아이디 (Admin ID)</label>
+                <label class="form-label">{{ _('admin_id') }}</label>
                 <input type="text" name="username" required placeholder="admin" value="admin" class="auth-input">
             </div>
 
             <div class="form-group">
-                <label class="form-label">관리자 비밀번호 (Admin Password)</label>
-                <input type="password" name="password" required placeholder="강력한 비밀번호를 입력하세요" class="auth-input">
+                <label class="form-label">{{ _('admin_password') }}</label>
+                <input type="password" name="password" required placeholder="{{ _('admin_password_placeholder') }}" class="auth-input">
             </div>
 
             <div class="master-key-box">
-                <label style="display: block; margin-bottom: 10px; font-size: 0.9rem; color: var(--accent-color); font-weight: 600;">마스터 암호화 키 (Master Key)</label>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px; line-height: 1.5;">서버 접속 정보를 암호화하는 데 사용됩니다. <b>반드시 안전한 곳에 보관하세요!</b></p>
+                <label style="display: block; margin-bottom: 10px; font-size: 0.9rem; color: var(--accent-color); font-weight: 600;">{{ _('master_key_title') }}</label>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px; line-height: 1.5;">{{ _('master_key_desc') }}</p>
                 <input type="text" name="master_key" required value="{{ default_key }}" class="auth-input" style="color: #fbbf24; font-family: 'Courier New', monospace;">
             </div>
 
             <button type="submit" class="btn-auth" style="font-size: 1.1rem; border-radius: 14px;">
-                설정 완료 및 시작하기
+                {{ _('setup_complete_and_start') }}
             </button>
         </form>
         
         <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 25px;">
-            💡 설정 완료 시 <code>.env</code> 파일이 자동으로 생성/업데이트됩니다.<br>
-            보안 키 변경이 필요한 경우 파일을 수동 수정 후 서버를 재시작하세요.
+            {{ _('setup_footer_1') | safe }}
         </p>
         
         <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 10px;">
-            설정 완료 후에는 더 이상 이 페이지에 접근할 수 없습니다.
+            {{ _('setup_footer_2') }}
         </p>
     </div>
 </div>

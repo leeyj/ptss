@@ -4,7 +4,7 @@
 <div style="max-width: 600px; margin: 0 auto; width: 100%;">
     <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 16px; padding: 40px; backdrop-filter: blur(10px);">
         <h2 style="margin-top: 0; margin-bottom: 30px; display: flex; align-items: center; gap: 15px;">
-            <span style="font-size: 1.5rem;">👤</span> 내 프로필 정보
+            <span style="font-size: 1.5rem;">👤</span> {{ _('my_profile_info') }}
         </h2>
 
         {% with messages = get_flashed_messages() %}
@@ -18,14 +18,14 @@
         {% endwith %}
 
         <div style="margin-bottom: 30px;">
-            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">사용자 이름</label>
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">{{ _('username') }}</label>
             <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 8px; color: white;">
                 {{ user.username }}
             </div>
         </div>
 
         <div style="margin-bottom: 30px;">
-            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">계정 역할</label>
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">{{ _('account_role') }}</label>
             <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 8px; color: var(--accent-color); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px;">
                 {{ user.role }}
             </div>
@@ -33,15 +33,15 @@
 
         <hr style="border: none; border-top: 1px solid var(--border-color); margin: 40px 0;">
 
-        <h3 style="margin-top: 0; margin-bottom: 20px; font-size: 1.1rem; color: #f8fafc;">비밀번호 변경</h3>
+        <h3 style="margin-top: 0; margin-bottom: 20px; font-size: 1.1rem; color: #f8fafc;">{{ _('change_password') }}</h3>
         <form method="POST">
             <div style="margin-bottom: 20px;">
-                <label for="password" style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">새 비밀번호</label>
+                <label for="password" style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">{{ _('new_password') }}</label>
                 <input type="password" name="password" id="password" required 
-                       placeholder="변경할 비밀번호를 입력하세요" 
+                       placeholder="{{ _('new_password_placeholder') }}" 
                        style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 8px; color: white; box-sizing: border-box; outline: none; transition: border-color 0.2s;">
             </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">비밀번호 변경 적용</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">{{ _('apply_change') }}</button>
         </form>
     </div>
 </div>

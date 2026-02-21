@@ -17,6 +17,7 @@ from core.database import db
 from core.models import Host, History, Config, User
 from core.utils import get_client_ip
 from core.sockets import register_socket_events, stats_monitoring_task
+from core.i18n import I18nManager, _
 
 # Blueprints
 from blueprints.api import bp as api_bp
@@ -86,6 +87,15 @@ socketio = SocketIO(
 
 # Register SocketIO Handlers
 register_socket_events(socketio, app)
+
+# Initialize I18n
+with app.app_context():
+    I18nManager.load_translations()
+
+
+@app.context_processor
+def inject_i18n():
+    return dict(_=_, get_lang=I18nManager.get_lang)
 
 
 @app.before_request

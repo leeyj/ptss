@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="{{ get_lang() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -65,7 +65,7 @@
         </div>
         <div class="nav-group">
             <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}">
-                <span>🏠</span> <span>대시보드</span>
+                <span>🏠</span> <span>{{ _('dashboard') }}</span>
             </a>
             <div class="nav-sub-menu">
                 {% for h in all_hosts %}
@@ -76,13 +76,13 @@
             </div>
             
             <a href="/scripts" class="nav-item {% if request.path == '/scripts' %}active{% endif %}">
-                <span>🚀</span> <span>자동화 스크립트</span>
+                <span>🚀</span> <span>{{ _('automation_scripts') }}</span>
             </a>
             <a href="/history" class="nav-item {% if request.path == '/history' %}active{% endif %}">
-                <span>📋</span> <span>활동 히스토리</span>
+                <span>📋</span> <span>{{ _('activity_history') }}</span>
             </a>
             <a href="/settings" class="nav-item {% if request.path == '/settings' %}active{% endif %}">
-                <span>⚙️</span> <span>환경 설정</span>
+                <span>⚙️</span> <span>{{ _('settings') }}</span>
             </a>
         </div>
         
@@ -92,17 +92,17 @@
                     {{ session.username[0]|upper if session.username else '?' }}
                 </div>
                 <div class="sidebar-footer-text">
-                    <div class="username-display">{{ session.username or 'Guest' }}</div>
-                    <a href="/profile" class="profile-link">내 프로필</a>
+                    <div class="username-display">{{ session.username or _('guest') }}</div>
+                    <a href="/profile" class="profile-link">{{ _('my_profile') }}</a>
                 </div>
             </div>
             {% if session.role == 'admin' %}
             <a href="/admin/users" class="btn btn-outline" style="width: 100%; font-size: 0.85rem; padding: 8px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; border-color: rgba(255,255,255,0.1);">
-                <span>👥</span> <span>사용자 관리</span>
+                <span>👥</span> <span>{{ _('user_management') }}</span>
             </a>
             {% endif %}
             <a href="/logout" class="btn btn-outline" style="width: 100%; font-size: 0.85rem; padding: 8px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <span>🚪</span> <span>로그아웃</span>
+                <span>🚪</span> <span>{{ _('logout') }}</span>
             </a>
         </div>
         

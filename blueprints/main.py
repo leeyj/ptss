@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for  # type: ignore
+from flask import Blueprint, render_template, request, redirect, url_for, session  # type: ignore
 from core.database import db  # type: ignore
 from core.models import Host, Config  # type: ignore
 from core.decorators import login_required  # type: ignore
@@ -24,6 +24,10 @@ def view_settings():
         sftp_sort = request.form.get("sftp_sort_by")
         keepalive = request.form.get("ssh_keepalive_interval", "0")
         retention = request.form.get("session_retention", "maintain")
+        lang = request.form.get("lang")
+
+        if lang:
+            session["lang"] = lang
 
         # Log view mode update
         conf_log = Config.query.filter_by(key="log_view_mode").first()

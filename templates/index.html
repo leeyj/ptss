@@ -6,16 +6,16 @@
 
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
-    <h1>호스트 관리</h1>
-    <button class="btn btn-primary" onclick="document.getElementById('addHostModal').style.display='flex'">+ 새 호스트 추가</button>
+    <h1>{{ _('host_management') }}</h1>
+    <button class="btn btn-primary" onclick="document.getElementById('addHostModal').style.display='flex'">+ {{ _('add_new_host') }}</button>
 </div>
 
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-        <h2 style="margin: 0;">🖥️ 서버 인프라 상태</h2>
+        <h2 style="margin: 0;">🖥️ {{ _('server_infrastructure_status') }}</h2>
         <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
             <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block; animation: pulse 2s infinite;"></span>
-            실시간 업데이트 중 (5s)
+            {{ _('realtime_updating') }} (5s)
         </div>
     </div>
     
@@ -65,8 +65,8 @@
             </div>
             
             <div style="display: flex; gap: 8px;">
-                <a href="/connect/{{ host.id }}" class="btn btn-primary" style="flex: 1; font-size: 0.85rem; padding: 8px;">접속하기</a>
-                <button id="monitor-btn-{{ host.id }}" class="btn btn-outline" style="padding: 8px 12px;" onclick="toggleMonitoring({{ host.id }})" title="모니터링 토글">
+                <a href="/connect/{{ host.id }}" class="btn btn-primary" style="flex: 1; font-size: 0.85rem; padding: 8px;">{{ _('connect') }}</a>
+                <button id="monitor-btn-{{ host.id }}" class="btn btn-outline" style="padding: 8px 12px;" onclick="toggleMonitoring({{ host.id }})" title="{{ _('monitoring_toggle') }}">
                     <span id="monitor-icon-{{ host.id }}">👁️</span>
                 </button>
                 <button class="btn btn-outline" style="padding: 8px 12px;" onclick="deleteHost({{ host.id }}, '{{ host.name }}')">🗑️</button>
@@ -76,7 +76,7 @@
     </div>
     
     {% if not hosts %}
-    <p style="color: var(--text-muted); text-align: center; padding: 60px;">등록된 서버가 없습니다. 우측 상단의 버튼을 눌러 추가하세요.</p>
+    <p style="color: var(--text-muted); text-align: center; padding: 60px;">{{ _('no_hosts_registered') }}</p>
     {% endif %}
 </div>
 
@@ -84,52 +84,52 @@
 <div id="addHostModal" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="max-width: 500px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-            <h2 style="margin: 0;">🌐 새 호스트 추가</h2>
+            <h2 style="margin: 0;">🌐 {{ _('add_new_host') }}</h2>
             <span style="cursor: pointer; font-size: 1.5rem;" onclick="document.getElementById('addHostModal').style.display='none'">&times;</span>
         </div>
         
         <form id="addHostForm" enctype="multipart/form-data">
             <div style="margin-bottom: 15px;">
-                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">호스트 별칭 (관리용 이름)</label>
-                <input type="text" name="name" required placeholder="예: Home-Server, Web-01" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 6px;">
+                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">{{ _('host_nickname') }}</label>
+                <input type="text" name="name" required placeholder="{{ _('nickname_placeholder') }}" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 6px;">
             </div>
             
             <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 15px; margin-bottom: 15px;">
                 <div>
-                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">호스트 주소 (IP or Domain)</label>
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">{{ _('host_address') }}</label>
                     <input type="text" name="hostname" required placeholder="192.168.0.1" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 6px;">
                 </div>
                 <div>
-                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">포트</label>
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">{{ _('port') }}</label>
                     <input type="number" name="port" required value="22" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 6px;">
                 </div>
             </div>
             
             <div style="margin-bottom: 15px;">
-                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">사용자 이름 (Username)</label>
-                <input type="text" name="username" required placeholder="ubuntu, root..." style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 6px;">
+                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">{{ _('username') }}</label>
+                <input type="text" name="username" required placeholder="{{ _('username_placeholder_ssh') }}" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 6px;">
             </div>
             
             <div style="margin-bottom: 15px;">
-                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">인증 방식</label>
+                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">{{ _('auth_type') }}</label>
                 <select name="auth_type" onchange="toggleAuthFields(this.value)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 6px;">
-                    <option value="password">비밀번호 (Password)</option>
-                    <option value="key">개인키 (SSH Key)</option>
+                    <option value="password">{{ _('password') }}</option>
+                    <option value="key">{{ _('ssh_key') }}</option>
                 </select>
             </div>
             
             <div id="passwordField" style="margin-bottom: 25px;">
-                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">비밀번호</label>
+                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">{{ _('password') }}</label>
                 <input type="password" name="password" placeholder="••••••••" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 6px;">
             </div>
             
             <div id="keyField" style="margin-bottom: 25px; display: none;">
-                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">개인키 콘텐츠 (또는 파일 업로드)</label>
+                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px;">{{ _('private_key_content') }}</label>
                 <textarea name="key_content" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----..." style="width: 100%; box-sizing: border-box; height: 100px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; margin-bottom: 10px;"></textarea>
                 <input type="file" name="key_file" style="font-size: 0.8rem; color: var(--text-muted);">
             </div>
             
-            <button type="submit" id="saveHostBtn" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 600;">테스트 및 저장하기</button>
+            <button type="submit" id="saveHostBtn" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 600;">{{ _('test_and_save') }}</button>
         </form>
     </div>
 </div>
