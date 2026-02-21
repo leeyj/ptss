@@ -10,7 +10,7 @@ window.PTSS.Snippet = {
             this.render();
         } catch (e) {
             console.error('Failed to load snippets:', e);
-            document.getElementById('snippetList').innerHTML = '<div style="padding:10px; color:var(--danger);">실패</div>';
+            document.getElementById('snippetList').innerHTML = `<div style="padding:10px; color:var(--danger);">${window.I18N.failed}</div>`;
         }
     },
 
@@ -19,14 +19,14 @@ window.PTSS.Snippet = {
         if (!listEl) return;
 
         if (this.snippets.length === 0) {
-            listEl.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted);">스니펫이 없습니다.</div>';
+            listEl.innerHTML = `<div style="padding:20px; text-align:center; color:var(--text-muted);">${window.I18N.no_snippets}</div>`;
             return;
         }
 
         // 카테고리별 그룹화
         const groups = {};
         this.snippets.forEach(s => {
-            const cat = s.category || '기본';
+            const cat = s.category || window.I18N.default_category;
             if (!groups[cat]) groups[cat] = [];
             groups[cat].push(s);
         });
@@ -88,15 +88,15 @@ window.PTSS.Snippet = {
 
         if (id) {
             const s = this.snippets.find(x => x.id === id);
-            title.innerText = '명령어 스니펫 수정';
+            title.innerText = window.I18N.edit_snippet;
             sid.value = s.id;
             scat.value = s.category;
             sname.value = s.name;
             scmd.value = s.command;
         } else {
-            title.innerText = '명령어 스니펫 추가';
+            title.innerText = window.I18N.add_snippet;
             sid.value = '';
-            scat.value = '일반';
+            scat.value = window.I18N.default_category;
             sname.value = '';
             scmd.value = '';
         }
@@ -114,7 +114,7 @@ window.PTSS.Snippet = {
         const command = document.getElementById('snippetCommand').value;
 
         if (!name || !command) {
-            alert('이름과 명령어를 모두 입력하세요.');
+            alert(window.I18N.input_all_fields);
             return;
         }
 
@@ -130,18 +130,18 @@ window.PTSS.Snippet = {
                 this.load();
             }
         } catch (e) {
-            alert('저장 중 오류가 발생했습니다.');
+            alert(window.I18N.error_save);
         }
     },
 
     async delete(id) {
-        if (!confirm('정말 삭제하시겠습니까?')) return;
+        if (!confirm(window.I18N.confirm_delete)) return;
         try {
             const response = await fetch(`/api/snippets/delete/${id}`, { method: 'DELETE' });
             const res = await response.json();
             if (res.success) this.load();
         } catch (e) {
-            alert('삭제 중 오류가 발생했습니다.');
+            alert(window.I18N.error_delete);
         }
     }
 };

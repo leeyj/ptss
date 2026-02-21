@@ -6,12 +6,12 @@ window.PTSS = window.PTSS || {};
 
 window.PTSS.Session = {
     async terminate() {
-        if (!confirm('정말로 연결을 종료하시겠습니까?')) return;
+        if (!confirm(window.I18N.confirm_terminate)) return;
         try {
             const config = window.PTSS.config;
             const resp = await fetch(`/api/disconnect/${config.hostId}`, { method: 'POST' });
             if (resp.ok) window.location.href = window.PTSS_BASE_URL || '/';
-        } catch (e) { alert('종료 중 오류가 발생했습니다.'); }
+        } catch (e) { alert(window.I18N.error_terminate); }
     },
 
     openPopup(event) {

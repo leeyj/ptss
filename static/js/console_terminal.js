@@ -36,8 +36,8 @@ window.PTSS.Terminal = {
         tabBtn.innerHTML = `
             <span>Terminal ${this.tabCounter}</span>
             <div class="tab-controls">
-                <span class="log-btn" onclick="PTSS.Terminal.downloadLog('${tabId}', event)" title="로그 저장">💾</span>
-                <span class="popup-btn" onclick="PTSS.Session.openPopup(event)" title="새 창으로 열기">↗️</span>
+                <span class="log-btn" onclick="PTSS.Terminal.downloadLog('${tabId}', event)" title="Log">💾</span>
+                <span class="popup-btn" onclick="PTSS.Session.openPopup(event)" title="Popup">↗️</span>
                 <span class="close-btn" onclick="PTSS.Terminal.closeTab('${tabId}', event)">×</span>
             </div>
         `;
@@ -54,9 +54,8 @@ window.PTSS.Terminal = {
         document.getElementById('terminal-stack').appendChild(termContainer);
 
         // 안내 메시지 제거
-        const stackArg = document.getElementById('terminal-stack');
-        const placeholder = stackArg.querySelector('div:not([id^="term-"])');
-        if (placeholder && placeholder.innerText.includes('추가하세요')) placeholder.remove();
+        const placeholder = document.getElementById('terminal-placeholder');
+        if (placeholder) placeholder.remove();
 
         // 3. xterm.js 초기화
         const settings = window.PTSS.Settings ? window.PTSS.Settings.config : {
@@ -218,11 +217,11 @@ window.PTSS.Terminal = {
         if (event) event.stopPropagation();
 
         if (Object.keys(this.tabs).length <= 1) {
-            alert("최소 하나의 터미널은 유지해야 합니다.");
+            alert(window.I18N.min_one_terminal);
             return;
         }
 
-        if (!confirm('이 탭을 닫으시겠습니까?')) return;
+        if (!confirm(window.I18N.confirm_close_tab)) return;
 
         const tab = this.tabs[tabId];
         if (tab) {

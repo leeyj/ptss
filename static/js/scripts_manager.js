@@ -27,7 +27,7 @@ const ScriptManager = (function () {
         newScript: function () {
             currentScriptId = null;
             document.getElementById('scriptName').value = '';
-            editor.setValue("#!/bin/bash\n\n# 여기에 스크립트를 작성하세요.");
+            editor.setValue("#!/bin/bash\n\n# " + window.I18N.write_script_here);
             document.querySelectorAll('.script-item').forEach(el => el.classList.remove('active'));
         },
 
@@ -49,7 +49,7 @@ const ScriptManager = (function () {
             const name = document.getElementById('scriptName').value;
             const content = editor.getValue();
 
-            if (!name) return alert('스크립트 이름을 입력하세요.');
+            if (!name) return alert(window.I18N.enter_script_name);
 
             try {
                 const response = await fetch('/api/scripts/save', {
@@ -62,13 +62,13 @@ const ScriptManager = (function () {
                     location.reload();
                 }
             } catch (error) {
-                alert('저장 중 오류가 발생했습니다.');
+                alert(window.I18N.error_save);
             }
         },
 
         deleteScript: async function () {
             if (!currentScriptId) return;
-            if (!confirm('정말 삭제하시겠습니까?')) return;
+            if (!confirm(window.I18N.confirm_delete)) return;
 
             try {
                 const response = await fetch(`/api/scripts/delete/${currentScriptId}`, {
@@ -79,7 +79,7 @@ const ScriptManager = (function () {
                     location.reload();
                 }
             } catch (error) {
-                alert('삭제 중 오류가 발생했습니다.');
+                alert(window.I18N.error_delete);
             }
         },
 
@@ -102,20 +102,20 @@ const ScriptManager = (function () {
                     alert(data.error);
                 }
             } catch (error) {
-                alert('업로드 중 오류가 발생했습니다.');
+                alert(window.I18N.error_upload);
             }
         },
 
         execute: async function () {
             const hostId = document.getElementById('targetHost').value;
-            if (!hostId) return alert('대상 호스트를 선택하세요.');
-            if (!currentScriptId) return alert('먼저 스크립트를 저장하거나 로드하세요.');
+            if (!hostId) return alert(window.I18N.select_target_host_msg);
+            if (!currentScriptId) return alert(window.I18N.first_save_or_load_script);
 
             const resultArea = document.getElementById('resultArea');
             const resultContent = document.getElementById('resultContent');
 
             resultArea.style.display = 'block';
-            resultContent.innerText = '📡 원격 서버로 전송 및 실행 중...';
+            resultContent.innerText = window.I18N.executing_remote;
 
             try {
                 const response = await fetch('/api/scripts/execute', {
@@ -129,9 +129,9 @@ const ScriptManager = (function () {
                 if (data.error) {
                     resultText += '\n[ERROR]\n' + data.error;
                 }
-                resultContent.innerText = resultText || '성공 (출력 없음)';
+                resultContent.innerText = resultText || window.I18N.success_no_output;
             } catch (error) {
-                resultContent.innerText = '❌ 실행 중 통신 오류가 발생했습니다.';
+                resultContent.innerText = window.I18N.error_execution_comm;
             }
         },
 

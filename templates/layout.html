@@ -12,6 +12,29 @@
         // Nginx 리버스 프록시 서브 디렉토리(/ptss) 대응을 위한 전역 URL 패치
         window.PTSS_BASE_URL = "{{ url_for('main.index') }}".replace(/\/$/, "");
         
+        // 전역 I18N 지원 (항상 정의)
+        window.I18N = {
+            confirm_terminate: "{{ _('confirm_terminate') }}",
+            error_terminate: "{{ _('error_terminate') }}",
+            confirm_close_tab: "{{ _('confirm_close_tab') }}",
+            min_one_terminal: "{{ _('min_one_terminal') }}",
+            confirm_delete: "{{ _('confirm_delete') }}",
+            error_save: "{{ _('error_save') }}",
+            error_delete: "{{ _('error_delete') }}",
+            input_all_fields: "{{ _('input_all_fields') }}",
+            add_snippet: "{{ _('add_snippet') }}",
+            edit_snippet: "{{ _('edit_snippet') }}",
+            default_category: "{{ _('default_category') }}",
+            failed: "{{ _('failed') }}",
+            no_snippets: "{{ _('no_snippets') }}",
+            save_success: "{{ _('save_success') }}",
+            loading: "{{ _('loading') }}",
+            terminal_restricted_msg: "{{ _('terminal_restricted_msg') }}",
+            upload_success: "{{ _('upload_success') }}",
+            upload_fail: "{{ _('upload_fail') }}",
+            error_load: "{{ _('error_load') }}"
+        };
+
         if (window.PTSS_BASE_URL) {
             // 1. Fetch API 절대 경로 보정
             const originalFetch = window.fetch;

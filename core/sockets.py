@@ -19,6 +19,7 @@ from core.state import (
 from core.ssh_manager import SSHManager
 from core.crypto import decrypt_data
 from core.utils import get_client_ip
+from core.i18n import _
 
 
 def connect_and_monitor(host_id, app):
@@ -256,7 +257,7 @@ def register_socket_events(socketio, app):
                 )
             emit(
                 "terminal_output",
-                {"data": "\r\n[PTSS] 기존 세션 복구됨...\r\n", "tab_id": tab_id},
+                {"data": f"\r\n{_('terminal_restore_msg')}\r\n", "tab_id": tab_id},
             )
         else:
             shell = manager.get_shell()
@@ -264,7 +265,7 @@ def register_socket_events(socketio, app):
                 emit(
                     "terminal_output",
                     {
-                        "data": "\r\n[PTSS] 셸 세션을 시작할 수 없습니다.\r\n",
+                        "data": f"\r\n{_('terminal_start_fail_msg')}\r\n",
                         "tab_id": tab_id,
                     },
                 )
@@ -302,7 +303,10 @@ def register_socket_events(socketio, app):
             socketio.start_background_task(shell_to_socket, session_key)
             emit(
                 "terminal_output",
-                {"data": "\r\n[PTSS] 실시간 서버 연결 성공...\r\n", "tab_id": tab_id},
+                {
+                    "data": f"\r\n{_('terminal_connect_success_msg')}\r\n",
+                    "tab_id": tab_id,
+                },
             )
 
     @socketio.on("terminal_input")
@@ -346,7 +350,7 @@ def register_socket_events(socketio, app):
                                     socketio.emit(
                                         "terminal_output",
                                         {
-                                            "data": f"\r\n\x1b[31m[PTSS] 금지된 명령어가 포함되어 있습니다: '{keyword}'\x1b[0m\r\n",
+                                            "data": f"\r\n\x1b[31m{_('terminal_restricted_msg').format(keyword=keyword)}\x1b[0m\r\n",
                                             "tab_id": tab_id,
                                         },
                                         room=sid,

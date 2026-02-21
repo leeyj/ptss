@@ -11,7 +11,7 @@ window.PTSS.SFTP = {
         const fileListEl = document.getElementById('fileList');
         const currentPathDisplay = document.getElementById('currentPath');
 
-        if (fileListEl) fileListEl.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">불러오는 중...</div>';
+        if (fileListEl) fileListEl.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-muted);">${window.I18N.loading}</div>`;
         if (currentPathDisplay) currentPathDisplay.innerText = path;
 
         try {
@@ -26,7 +26,7 @@ window.PTSS.SFTP = {
             }
         } catch (e) {
             console.error('SFTP Load Error:', e);
-            if (fileListEl) fileListEl.innerHTML = '<div style="padding: 20px; color: var(--danger);">로드 실패</div>';
+            if (fileListEl) fileListEl.innerHTML = `<div style="padding: 20px; color: var(--danger);">${window.I18N.error_load}</div>`;
         }
     },
 
@@ -168,13 +168,13 @@ window.PTSS.SFTP = {
                     body: formData
                 });
                 if (resp.ok) {
-                    alert('업로드 성공');
+                    alert(window.I18N.upload_success);
                     this.load(currentPath);
                 } else {
                     const data = await resp.json();
-                    alert('업로드 실패: ' + data.error);
+                    alert(window.I18N.upload_fail + ': ' + data.error);
                 }
-            } catch (e) { alert('업로드 중 오류 발생'); }
+            } catch (e) { alert(window.I18N.upload_fail); }
         };
         fileInput.click();
     },
