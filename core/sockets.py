@@ -255,6 +255,10 @@ def register_socket_events(socketio, app):
     def handle_terminal_input(data):
         user_id = session.get("user_id")
         host_id = data.get("host_id")
+        if not host_id:
+            info = sid_to_info.get(request.sid)
+            if info:
+                host_id = info[1]
         tab_id = data.get("tab_id", "default")
         input_data = data.get("data")
 
@@ -326,6 +330,10 @@ def register_socket_events(socketio, app):
     def handle_guard_confirm(data):
         user_id = session.get("user_id")
         host_id = data.get("host_id")
+        if not host_id:
+            info = sid_to_info.get(request.sid)
+            if info:
+                host_id = info[1]
         tab_id = data.get("tab_id", "default")
         confirmed = data.get("confirmed", True)  # 기본값 True (confirm 버튼 전용이므로)
 
@@ -364,6 +372,10 @@ def register_socket_events(socketio, app):
     def handle_guard_cancel(data):
         user_id = session.get("user_id")
         host_id = data.get("host_id")
+        if not host_id:
+            info = sid_to_info.get(request.sid)
+            if info:
+                host_id = info[1]
         tab_id = data.get("tab_id", "default")
 
         s_key = (user_id, host_id, tab_id)
@@ -381,6 +393,10 @@ def register_socket_events(socketio, app):
     def handle_terminal_resize(data):
         user_id = session.get("user_id")
         host_id = data.get("host_id")
+        if not host_id:
+            info = sid_to_info.get(request.sid)
+            if info:
+                host_id = info[1]
         tab_id = data.get("tab_id", "default")
         cols = data.get("cols")
         rows = data.get("rows")

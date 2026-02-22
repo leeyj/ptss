@@ -115,6 +115,7 @@ window.PTSS.Terminal = {
                             window.PTSS.socket.emit('terminal_resize', {
                                 cols: term.cols,
                                 rows: term.rows,
+                                host_id: window.PTSS.config.hostId,
                                 tab_id: tabId
                             });
                         }
@@ -128,6 +129,7 @@ window.PTSS.Terminal = {
         term.onData(data => {
             socket.emit('terminal_input', {
                 data: data,
+                host_id: window.PTSS.config.hostId,
                 tab_id: tabId
             });
         });
@@ -157,6 +159,7 @@ window.PTSS.Terminal = {
                 if (command.length > 1) {
                     socket.emit('terminal_command', {
                         command: command,
+                        host_id: window.PTSS.config.hostId,
                         tab_id: tabId
                     });
                 }
@@ -255,6 +258,7 @@ window.PTSS.Terminal = {
         window.PTSS.socket.emit('terminal_resize', {
             cols: tab.term.cols,
             rows: tab.term.rows,
+            host_id: window.PTSS.config.hostId,
             tab_id: this.activeTabId
         });
     },
@@ -316,13 +320,19 @@ window.PTSS.Guard = {
 
     confirm() {
         const socket = window.PTSS.socket;
-        socket.emit('terminal_confirm_guard', { tab_id: this.pendingTabId });
+        socket.emit('terminal_confirm_guard', {
+            tab_id: this.pendingTabId,
+            host_id: window.PTSS.config.hostId
+        });
         this.close();
     },
 
     cancel() {
         const socket = window.PTSS.socket;
-        socket.emit('terminal_cancel_guard', { tab_id: this.pendingTabId });
+        socket.emit('terminal_cancel_guard', {
+            tab_id: this.pendingTabId,
+            host_id: window.PTSS.config.hostId
+        });
         this.close();
     },
 
