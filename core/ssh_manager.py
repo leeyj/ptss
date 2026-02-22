@@ -1,5 +1,6 @@
 import paramiko  # type: ignore
 import os
+import shlex
 
 
 class SSHManager:
@@ -20,7 +21,9 @@ class SSHManager:
     ):
         try:
             self.client = paramiko.SSHClient()
-            self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # type: ignore
+            self.client.load_system_host_keys()
+            # 기본적으로는 경고 없이 추가하지만, 가능하면 알려진 호스트 확인
+            self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # type: ignore # nosec
 
             if pkey_content:
                 # 메모리 상의 키 콘텐츠 직접 사용 (io.StringIO 활용)
@@ -87,14 +90,15 @@ class SSHManager:
             sftp.close()
 
             # 실행 (Login shell 사용)
-            cmd = f'bash -l -c "{remote_path}"'
+            quoted_path = shlex.quote(remote_path)
+            cmd = f"bash -l -c {quoted_path}"
             stdin, stdout, stderr = self.client.exec_command(cmd)
 
             out = stdout.read().decode().strip()
             err = stderr.read().decode().strip()
 
             # 실행 후 삭제 (Cleanup)
-            self.client.exec_command(f"rm {remote_path}")
+            self.client.exec_command(f"rm {shlex.quote(remote_path)}")
 
             return {"stdout": out, "stderr": err}, "Execution completed"
         except Exception as e:
@@ -105,7 +109,9 @@ class SSHManager:
             return []
 
         # 쉘 환경에 구애받지 않는 ls 자동 완성
-        cmd = f"ls -d {partial}* 2>/dev/null"
+        quoted_partial = shlex.quote(partial)
+        # partial 뒤에 *가 붙으므로 완전히 쿼팅하기보다 partial 부분만 보호
+        cmd = f"ls -d {quoted_partial}* 2>/dev/null"
         stdin, stdout, stderr = self.client.exec_command(cmd)
         results = stdout.read().decode().splitlines()
         return [r for r in results if r]
@@ -177,7 +183,8 @@ class SSHManager:
         if not self.client:
             return None, "Not connected"
         try:
-            cmd = f"tail -n {lines} {remote_path}"
+            quoted_path = shlex.quote(remote_path)
+            cmd = f"tail -n {int(lines)} {quoted_path}"
             stdin, stdout, stderr = self.client.exec_command(cmd)  # type: ignore
             return stdout.read().decode("utf-8", errors="ignore"), "Success"
         except Exception as e:

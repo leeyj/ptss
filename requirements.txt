@@ -8,3 +8,5 @@ eventlet
 pytest
 pytest-mock
 pytest-cov
+bandit
+pip-audit

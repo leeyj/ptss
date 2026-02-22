@@ -4,6 +4,8 @@ from core.models import History, Host, Script, User, Snippet  # type: ignore
 from core.state import ssh_sessions, sid_to_host, shell_threads, input_buffers  # type: ignore
 import os
 import io
+import uuid
+import shlex
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -230,8 +232,10 @@ def execute_script_remote():
         return jsonify({"error": "Invalid script, host, or not connected"}), 400
 
     # 원격 서버로 스크립트 전송 및 실행
-    # 1. 임시 파일로 원격 전송
-    remote_path = f"/tmp/ptss_script_{script.id}.sh"
+    # 1. 임시 파일로 원격 전송 (예측 불가능한 파일명 사용)
+    tmp_filename = f"ptss_{uuid.uuid4().hex}.sh"
+    remote_path = f"/tmp/{tmp_filename}"
+    quoted_remote_path = shlex.quote(remote_path)
     success, msg = manager.upload_file(
         io.BytesIO(script.content.encode("utf-8")), remote_path
     )
@@ -240,7 +244,7 @@ def execute_script_remote():
         return jsonify({"error": f"Upload failed: {msg}"}), 500
 
     # 2. 실행 권한 부여 및 실행
-    exec_cmd = f"chmod +x {remote_path} && {remote_path} && rm {remote_path}"
+    exec_cmd = f"chmod +x {quoted_remote_path} && {quoted_remote_path} && rm {quoted_remote_path}"
     stdin, stdout, stderr = manager.client.exec_command(exec_cmd)
 
     output = stdout.read().decode("utf-8", errors="ignore")

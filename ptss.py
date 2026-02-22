@@ -144,6 +144,6 @@ with app.app_context():
             db.session.add(Config(key=key, value=value))
     db.session.commit()
 
-if __name__ == "__main__":
+    DEBUG_MODE = os.getenv("PTSS_DEBUG", "false").lower() == "true"
     socketio.start_background_task(stats_monitoring_task, socketio, app)
-    socketio.run(app, debug=True, use_reloader=False, host="0.0.0.0", port=6001)
+    socketio.run(app, debug=DEBUG_MODE, use_reloader=False, host="0.0.0.0", port=6001)
