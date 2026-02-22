@@ -21,6 +21,8 @@ from core.state import (
 from core.i18n import _
 from core.recording import compress_recording, cleanup_old_recordings
 from core.monitor import connect_and_monitor, stats_monitoring_task
+from core.crypto import decrypt_data
+from core.ssh_manager import SSHManager
 
 
 def register_socket_events(socketio, app):
@@ -284,7 +286,7 @@ def register_socket_events(socketio, app):
                                 # Interactive Guard: 위험 명령어 탐지 시 재확인 요청
                                 pending_guards[s_key] = full_cmd
                                 emit(
-                                    "command_guard_warning",
+                                    "command_guard_required",
                                     {
                                         "command": full_cmd,
                                         "tab_id": tab_id,
@@ -307,7 +309,7 @@ def register_socket_events(socketio, app):
                         host_id=host_id,
                         action_type="COMMAND",
                         detail=full_cmd,
-                        extra_info=f"IP: {get_client_ip(request)}",
+                        extra_info=f"IP: {get_client_ip()}",
                     )
                     db.session.add(new_hist)
                     db.session.commit()
@@ -320,12 +322,12 @@ def register_socket_events(socketio, app):
             terminal_buffers[s_key] += input_data
             shell.send(input_data)
 
-    @socketio.on("command_guard_confirm")
+    @socketio.on("terminal_confirm_guard")
     def handle_guard_confirm(data):
         user_id = session.get("user_id")
         host_id = data.get("host_id")
         tab_id = data.get("tab_id", "default")
-        confirmed = data.get("confirmed", False)
+        confirmed = data.get("confirmed", True)  # 기본값 True (confirm 버튼 전용이므로)
 
         s_key = (user_id, host_id, tab_id)
         cmd = pending_guards.pop(s_key, None)
@@ -344,7 +346,7 @@ def register_socket_events(socketio, app):
                     host_id=host_id,
                     action_type="COMMAND_FORCED",
                     detail=f"[CONFIRMED] {cmd}",
-                    extra_info=f"IP: {get_client_ip(request)}",
+                    extra_info=f"IP: {get_client_ip()}",
                 )
                 db.session.add(new_hist)
                 db.session.commit()
@@ -357,6 +359,23 @@ def register_socket_events(socketio, app):
                     "tab_id": tab_id,
                 },
             )
+
+    @socketio.on("terminal_cancel_guard")
+    def handle_guard_cancel(data):
+        user_id = session.get("user_id")
+        host_id = data.get("host_id")
+        tab_id = data.get("tab_id", "default")
+
+        s_key = (user_id, host_id, tab_id)
+        pending_guards.pop(s_key, None)
+
+        emit(
+            "terminal_output",
+            {
+                "data": "\r\n" + _("Command cancelled by user.") + "\r\n",
+                "tab_id": tab_id,
+            },
+        )
 
     @socketio.on("terminal_resize")
     def handle_terminal_resize(data):
